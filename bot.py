@@ -11,6 +11,7 @@ google_api='token'
 command_list=["!test","!record","!image","!jason","!help"]
 
 client = discord.Client()
+lastRecordSearch = ""
 
 @client.event
 @asyncio.coroutine
@@ -51,6 +52,7 @@ def on_message(message):
         insult = r.json()["insult"]
         yield from client.send_message(message.channel, insult.replace("Thou art","Jason is"))
     elif message.content.startswith('!record'):
+        global lastRecordSearch
         search = message.content.lower().split(" ")
         del search[0]
         if search:
@@ -59,19 +61,20 @@ def on_message(message):
             results = []
             if len(search) < 100:
                 baseUrl = "http://www.speedrun.com/api/v1/"
-                apiNext = "".join([baseUrl, "games"])
+                apiNext = "".join([baseUrl, "games?name={}".format(query)])
                 while apiNext:
-                    r = requests.get(apiNext,headers=auth)
+                    r = requests.get("".join([apiNext,headers=auth)
                     for game in r.json()["data"]:
-                        if query in game['names']['international'].lower():
-                            results.append(game)
+                        results.append(game)
                     nextPage = ""
                     for page in r.json()["pagination"]["links"]:
                         if "next" in page['rel']:
                             nextPage = page['uri']
                     apiNext = nextPage
                 if results:
-                    if len(results) = 1:
+                    if query == lastRecordSearch:
+                        results = [results[0]]
+                    if len(results) == 1:
                         gameId = results[0]["id"]
                         r = requests.get("".join([baseUrl,"games/",gameId]),headers=auth)
                         gameName = r.json()['data']['names']['international']
@@ -80,7 +83,7 @@ def on_message(message):
                         gameCategory = ""
                         for category in r.json()['data']:
                             if category['name'].startswith('Any%'):
-                                gameCategory = category['category']
+                                gameCategory = category
                                 break
                         if gameCategory:
                             for link in gameCategory['links']:
@@ -90,25 +93,38 @@ def on_message(message):
                             run = r.json()['data'][0]['runs'][0]['run']
                             record = run['times']['realtime'][2:]
                             userId = run['players'][0]['id']
-                            r = requests.get("".join([baseUrl,"/users/",userId]),headers=auth)
+                            r = requests.get("".join([baseUrl,"users/",userId]),headers=auth)
                             userName = r.json()['data']['names']['international']
 
                             yield from client.send_message(
                                 message.channel,
-                                "The record for {0} is {1} by {2}".format(gameName,record,userName))
+                                "The Any% record for {0} is {1} by {2}".format(gameName,record,userName))
                 
                         else:
                             yield from client.send_message(
                                 message.channel,
                                 "There are no Any% records for {}".format(gameName))
                     elif len(results) < 5:
-                        pass
+                        names = []
+                        for result in results:
+                            names.append(result['names']['international'])
+                        yield from client.send_message(
+                            message.channel,
+                            "Multiple results. Do a search for the following: {}".format(
+                                ", ".join(names)))
+                        yield from client.send_message(
+                            message.channel,
+                            "If you want the first result, redo the search")
                     else:
-                        pass
+                        yield from client.send_message(
+                            message.channel,
+                            "Too many results! Be a little more specific")
                 else:
                     yield from client.send_message(
                         message.channel,
                         "No games with that name found!")
+            lastRecordSearch = query
+        else:
             yield from client.send_message(
                 message.channel,
                 "You gotta give me something to look for...")
