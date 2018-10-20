@@ -1,230 +1,126 @@
 #!/usr/bin/python3
 
 import asyncio
-from calendar import monthrange
-import datetime
 import discord
-import logging
-import os
-import pytz
-import random
-import requests
-import sys
-import time
-
 from discord.ext import commands
 from discord.errors import Forbidden
-import dotenv
+import random
+import requests
 
-logging.basicConfig(stream=sys.stdout, level=logging.WARN)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.warn("Starting Honkbot...")
+# FIXME: Fill these out with your API tokens
+discord_api=""
+speedrun_api=""
+google_api=""
 
-class Honkbot():
-    """
-    HONK
+command_list=["!join","!image","!youtube","!jason","!help"]
 
-    A dumbass bot that interfaces with discord to do dumb stuff
+lastRecordSearch = ""
 
-    A list of things that it does:
-    * Adds people to groups
-    * Searches google for images
-    * Searches youtube for videos
-    * Insults people
-    * Gives information on eAmuse downtime
+client = discord.Client()
 
-    example:
-        import honkbot
-        bot = honkbot.Honkbot(discord_apikey)
-    """
+@client.event
+@asyncio.coroutine
+def on_ready():
+    print('Logged in as {0} - {1}'.format(client.user.name, client.user.id))
 
-    def __init__(self, discord_api, speedrun_api=None, google_api=None):
-        self.command_list = [
-            "!join",
-            "!image",
-            "!youtube",
-            "!ranatalus",
-            "!eamuse",
-            "!help",
-            "!insult"
-        ]
+@client.event
+@asyncio.coroutine
+# TODO: This doesnt work at all lmao.
+# This should send to the individual 
+def on_member_join(member):
+    channel = member.server.default_channel()
+    message = "Welcome {0} to the discord channel!!!"
+    yield from client.send_message(channel, message)
 
-        self.eamuse_maint = {
-            "normal": ("20:00", "22:00"),
-            "extended": ("17:00", "22:00"),
-            "us": ("12:00", "17:00")
-        }
+@client.event
+@asyncio.coroutine
+def on_message(message):
+    if message.content.startswith('!test'):
+        chosen = random.choice(list(client.get_all_members()))
+        yield from client.send_message(message.channel, "Here is a random member to harass:")
+        yield from client.send_message(message.channel, " - ".join([chosen.name,chosen.status.name]))
 
-        self.discord_api = discord_api
-        self.speedrun_api = speedrun_api
-        self.google_api = google_api
-
-        self.client = discord.Client()
-        try:
-            self.client.run(self.discord_api)
-        except Exception as e:
-            logger.error("!!! Caught exception: {0}".format(e))
-            return False
-
-        self.lastRecordSearch = ""
-
-        self.on_ready = self.client.event(self.on_ready)
-        self.on_message = self.client.event(self.on_message)
-
-    #@self.client.event
-    async def on_ready(self):
-        logger.warn('Logged in as {0} - {1}'.format(self.client.user.name, self.client.user.id))
-
-    #@self.client.event
-    #@asyncio.coroutine
-    async def on_message(self, message):
-        if message.content.startswith('!test'):
-            test = "test"
-            await self.client.send_message(message.author, test)
-
-        elif message.content.startswith('!join'):
-            self.set_channel_role(message)
-
-        elif message.content.startswith('!help'):
-            commands = "".join(["Commands are: ",", ".join(self.command_list)])
-            await self.client.send_message(message.channel, commands)
-
-        elif message.content.startswith('!youtube'):
-            self.search_youtube(message)
-        elif message.content.startswith('!image'):
-            self.search_google_images(message)
-        elif message.content.startswith('!insult'):
-            if len(message.content.lower().split(" ")) > 1:
-                self.name = message.content.lower().split(" ")[1]
-            else:
-                await self.client.send_message(message.channel, "No one to insult :(")
-                return
-            self.get_insult(self.name)
-        elif message.content.startswith('!ranatalus'):
-            self.get_insult("ranatalus")
-        elif message.content.startswith('!record'):
-            self.get_record(message)
-        elif message.content.startswith('!eamuse'):
-            self.get_eamuse_maintenance()
-
-        elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
-            # HONK WINS AGAIN
-            if "Skeeter" in message.author.name:
-                await self.client.send_message(message.channel, "beep")
-            else:
-                await self.client.send_message(message.channel, "HONK!")
-
-        elif message.content.startswith('!'):
-            commands = "".join(["Commands are: ",", ".join(self.command_list)])
-            await self.client.send_message(message.channel, commands)
-
-    def get_eamuse_maintenance(self):
-        """
-        Gets eAmusement maintenance time.
-
-        DDR (US Servers) - Third Monday of the month from 12 to 5 (?)
-        Everything else - Sun-Thurs from 4 to 6. Third Monday 1 to 6 
-
-        Required:
-        """
-
-        maint = {}
-        today = datetime.datetime.utcnow()
-        today = today.replace(tzinfo=pytz.utc)
-        east_time = today.astimezone(pytz.timezone("America/New_York"))
-        bom, days = monthrange(today.year, today.month)
-        firstmonday = (0 - bom) % 7 + 1
-        thirdmonday = range(firstmonday, days+1, 7)[2]
-        if today.day == thirdmonday:
-            maint['ddr'] = eamuse_maint['us']
-            maint['other'] = eamuse_maint['extended']
+    elif message.content.startswith('!join'):
+        allowed_roles = ['OH','MI','KY','PA']
+        if len(message.content.split(" ")) != 2:
+            yield from client.send_message(message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles),"]"]))
+            return
+        role = message.content.split(" ")[1]
+        if role not in allowed_roles:
+            yield from client.send_message(message.channel, "".join(["Allowed roles are: ",", ".join(allowed_roles)]))
         else:
-            maint['ddr'] = None
-            maint['other'] = eamuse_maint['normal']
-
-        if maint['ddr']:
-            begin_time = east_time.replace(hour=int(maint['ddr'][0].split(":")[0]),minute=0)
-            end_time = east_time.replace(hour=int(maint['ddr'][1].split(":")[0]),minute=0)
-            if east_time >= begin_time and east_time <= end_time:
-                await self.client.send_message(
-                    message.channel,
-                    "DDR: :x: - {0}-{1}".format(maint['ddr'][0],maint['ddr'][1]))
-            else:
-                await self.client.send_message(
-                    message.channel,
-                    "DDR: :white_check_mark: - {0}-{1}".format(maint['ddr'][0],maint['ddr'][1]))
-
-            begin_time = today.replace(hour=int(maint['other'][0].split(":")[0]),minute=0)
-            end_time = today.replace(hour=int(maint['other'][1].split(":")[0]),minute=0)
-            if (
-                east_time >= begin_time.astimezone(pytz.timezone("America/New_York")) and
-                east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
-            ):
-                await self.client.send_message(
-                    message.channel,
-                    "Other: :x: - {0}-{1}".format(
-                        begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                        end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
-            else:
-                await self.client.send_message(
-                    message.channel,
-                    "Other: :white_check_mark: - {0}-{1}".format(
-                        begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                        end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
-        else:
-            await self.client.send_message(
-                message.channel, "DDR: :white_check_mark: - no maintenance today")
-            begin_time = today.replace(hour=int(maint['other'][0].split(":")[0]),minute=0)
-            end_time = today.replace(hour=int(maint['other'][1].split(":")[0]),minute=0)
-            if east_time.weekday() in [4,5]:
-                await self.client.send_message(
-                    message.channel, "Other: :white_check_mark: - no maintenance today")
-            else:
-                if (
-                    east_time >= begin_time.astimezone(pytz.timezone("America/New_York")) and
-                    east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
-                ):
-
-                    await self.client.send_message(
-                        message.channel,
-                        "Other: :x: - {0}-{1}".format(
-                            begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                            end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
+            server_roles = message.server.roles
+            for server_role in server_roles:
+                if server_role.name == role:
+                    role_object = server_role
+            try:
+                if message.author.roles:
+                    yield from client.replace_roles(message.author, role_object)
                 else:
-                    await self.client.send_message(
-                        message.channel,
-                        "Other: :white_check_mark: - {0}-{1}".format(
-                            begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                            end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
+                    yield from client.add_roles(message.author, role_object) 
+                yield from client.send_message(
+                    message.channel, "Adding {0} to {1}".format(message.author.name, role))
+            except Forbidden:
+                yield from client.send_message(
+                    message.channel, "I do not have permissions to assign roles right now. Sorry!")
 
-    def get_insult(self, name):
-        """
-        Returns a scathing insult about the given name
+    elif message.content.startswith('!help'):
+        commands = "".join(["Commands are: ",", ".join(command_list)])
+        yield from client.send_message(message.channel, commands)
+    elif message.content.startswith('!youtube'):
+        search = message.content.split(" ")
+        del search[0]
+        if search:
+            query = " ".join(search)
+            if len(query) < 250:
+                url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={0}&key={1}".format(query, google_api)
+                r = requests.get(url)
+                try:
+                    response = r.json()['items'][0]["id"]["videoId"]
+                except IndexError:
+                    yield from client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
+                    return
 
-        Required:
-        name (str) - name of person to insult
-        """
+                if response:
+                    yield from client.send_message(message.channel, "https://youtu.be/{0}".format(response))
+                else:
+                    yield from client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
+                    return
+            else:
+                yield from client.send_message(message.channel, "Query too long!")
+                return
+        else:
+            yield from client.send_message(message.channel, "Usage: !youtube <search terms>")
+    elif message.content.startswith('!image'):
+        search = message.content.split(" ")
+        del search[0]
+        if search:
+            query = " ".join(search)
+            if len(query) < 150:
+                url = (
+                    "https://www.googleapis.com/customsearch/v1?q={}".format(search) +
+                    "&cx=009855409252983983547:3xrcodch8sc&searchType=image" +
+                    "&key={}".format(google_api))
+                r = requests.get(url)
+                try:
+                    response = r.json()["items"][0]["link"]
+                    yield from client.send_message(message.channel, response)
+                except KeyError:
+                    yield from client.send_message(message.channel, "No results found for {0} :(".format(query))
+            else:
+                yield from client.send_message(message.channel, "Query too big!")
+        else:
+            yield from client.send_message(message.channel, "Usage: !image <search term>")
+
+
+    elif message.content.startswith('!jason'):
         r = requests.get("http://quandyfactory.com/insult/json")
         insult = r.json()["insult"]
-        await self.client.send_message(message.channel, insult.replace("Thou art","{0} is".format(name)))
+        yield from client.send_message(message.channel, insult.replace("Thou art","Jason is"))
 
 
-    def get_record(self, message):
-        """
-        Accesses speedrun.com to get world record of given game
-
-        Requires:
-        message (obj) - message object from discord object
-        """
-
-        if not self.speedrun_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
-            return
-
+    elif message.content.startswith('!record'):
+        global lastRecordSearch
         search = message.content.lower().split(" ")
         del search[0]
         if search:
@@ -244,7 +140,7 @@ class Honkbot():
                             nextPage = page['uri']
                     apiNext = nextPage
                 if results:
-                    if query == self.lastRecordSearch:
+                    if query == lastRecordSearch:
                         results = [results[0]]
                     if len(results) == 1:
                         gameId = results[0]["id"]
@@ -268,151 +164,52 @@ class Honkbot():
                             r = requests.get("".join([baseUrl,"users/",userId]),headers=auth)
                             userName = r.json()['data']['names']['international']
 
-                            await self.client.send_message(
+                            yield from client.send_message(
                                 message.channel,
                                 "The Any% record for {0} is {1} by {2}".format(gameName,record,userName))
                 
                         else:
-                            await self.client.send_message(
+                            yield from client.send_message(
                                 message.channel,
                                 "There are no Any% records for {}".format(gameName))
                     elif len(results) < 5:
                         names = []
                         for result in results:
                             names.append(result['names']['international'])
-                        await self.client.send_message(
+                        yield from client.send_message(
                             message.channel,
                             "Multiple results. Do a search for the following: {}".format(
                                 ", ".join(names)))
-                        await self.client.send_message(
+                        yield from client.send_message(
                             message.channel,
                             "If you want the first result, redo the search")
                     else:
-                        await self.client.send_message(
+                        yield from client.send_message(
                             message.channel,
                             "Too many results! Be a little more specific")
                 else:
-                    await self.client.send_message(
+                    yield from client.send_message(
                         message.channel,
                         "No games with that name found!")
-            self.lastRecordSearch = query
+            lastRecordSearch = query
         else:
-            await self.client.send_message(
+            yield from client.send_message(
                 message.channel,
                 "You gotta give me a game to look for...")
 
-    def search_google_images(self, message):
-        """
-        Returns an image from google from the given search terms
+    elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
+        yield from client.send_message(message.channel, "HONK!")
 
-        Requires:
-            message (obj) - message object from discord object
-        """
+    elif message.content.startswith('!'):
+        commands = "".join(["Commands are: ",", ".join(command_list)])
+        yield from client.send_message(message.channel, commands)
 
-        if not self.google_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
-            return
-
-        search = message.content.split(" ")
-        del search[0]
-        if search:
-            query = " ".join(search)
-            if len(query) < 150:
-                url = (
-                    "https://www.googleapis.com/customsearch/v1?q={}".format(search) +
-                    "&cx=009855409252983983547:3xrcodch8sc&searchType=image" +
-                    "&key={}".format(google_api))
-                r = requests.get(url)
-                try:
-                    response = r.json()["items"][0]["link"]
-                    await self.client.send_message(message.channel, response)
-                except KeyError:
-                    await self.client.send_message(message.channel, "No results found for {0} :(".format(query))
-            else:
-                await self.client.send_message(message.channel, "Query too big!")
-        else:
-            await self.client.send_message(message.channel, "Usage: !image <search term>")
-
-    def search_youtube(self, message):
-        """
-        Returns an video from youtube from the given search terms
-
-        Requires:
-            message (obj) - message object from discord object
-        """
-
-        if not self.google_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
-            return
-
-        search = message.content.split(" ")
-        del search[0]
-        if search:
-            query = " ".join(search)
-            if len(query) < 250:
-                url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={0}&key={1}".format(query, google_api)
-                r = requests.get(url)
-                try:
-                    response = r.json()['items'][0]["id"]["videoId"]
-                except IndexError:
-                    await self.client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
-                    return
-
-                if response:
-                    await self.client.send_message(message.channel, "https://youtu.be/{0}".format(response))
-                else:
-                    await self.client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
-                    return
-            else:
-                await self.client.send_message(message.channel, "Query too long!")
-                return
-        else:
-            await self.client.send_message(message.channel, "Usage: !youtube <search terms>")
-
-
-    def set_channel_role(self, message):
-        """
-        Sets a role to a user based on the given input
-
-        Requires:
-            message (obj) - message object from discord object
-        """
-
-        allowed_roles = ['OH','MI','KY','PA', 'IN', 'NY']
-        if len(message.content.split(" ")) != 2:
-            await self.client.send_message(message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles),"]"]))
-            return
-        role = message.content.split(" ")[1]
-        if role not in allowed_roles:
-            await self.client.send_message(message.channel, "".join(["Allowed roles are: ",", ".join(allowed_roles)]))
-        else:
-            server_roles = message.server.roles
-            for server_role in server_roles:
-                if server_role.name == role:
-                    role_object = server_role
-            try:
-                if message.author.roles:
-                    await self.client.replace_roles(message.author, role_object)
-                else:
-                    await self.client.add_roles(message.author, role_object) 
-                await self.client.send_message(
-                    message.channel, "Adding {0} to {1}".format(message.author.name, role))
-            except Forbidden:
-                await self.client.send_message(
-                    message.channel, "I do not have permissions to assign roles right now. Sorry!")
-
+def main():
+    while True:
+        try:
+            client.run(discord_api)
+        except Exception as e:
+            print("!!! Caught exception: {0}".format(e)
 
 if "__main__" in __name__:
-
-    dotenv.load_dotenv()
-    discord_api = os.getenv("DISCORD_API_KEY")
-    speedrun_api = os.getenv("SPEEDRUN_API_KEY")
-    google_api = os.getenv("GOOGLE_API_KEY")
-
-    bot = Honkbot(discord_api) 
+    main()
