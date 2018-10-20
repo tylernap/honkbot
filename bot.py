@@ -119,7 +119,7 @@ class Honkbot():
             commands = "".join(["Commands are: ",", ".join(self.command_list)])
             await self.client.send_message(message.channel, commands)
 
-    def get_eamuse_maintenance(self):
+    async def get_eamuse_maintenance(self):
         """
         Gets eAmusement maintenance time.
 
@@ -198,7 +198,7 @@ class Honkbot():
                             begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
                             end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
 
-    def get_insult(self, name):
+    async def get_insult(self, name):
         """
         Returns a scathing insult about the given name
 
@@ -210,7 +210,7 @@ class Honkbot():
         await self.client.send_message(message.channel, insult.replace("Thou art","{0} is".format(name)))
 
 
-    def get_record(self, message):
+    async def get_record(self, message):
         """
         Accesses speedrun.com to get world record of given game
 
@@ -301,7 +301,7 @@ class Honkbot():
                 message.channel,
                 "You gotta give me a game to look for...")
 
-    def search_google_images(self, message):
+    async def search_google_images(self, message):
         """
         Returns an image from google from the given search terms
 
@@ -336,7 +336,7 @@ class Honkbot():
         else:
             await self.client.send_message(message.channel, "Usage: !image <search term>")
 
-    def search_youtube(self, message):
+    async def search_youtube(self, message):
         """
         Returns an video from youtube from the given search terms
 
@@ -376,7 +376,7 @@ class Honkbot():
             await self.client.send_message(message.channel, "Usage: !youtube <search terms>")
 
 
-    def set_channel_role(self, message):
+    async def set_channel_role(self, message):
         """
         Sets a role to a user based on the given input
 
