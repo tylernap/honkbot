@@ -1,0 +1,3 @@
+* Separate the need for the full message in each function
+* Tons of PEP8 cleanup
+* Change to underscore variables because I can't make up my goddamn mind
