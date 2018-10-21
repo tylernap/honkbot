@@ -13,7 +13,7 @@ A list of things that it does:
 
 No special installations needed for the bot itself. Simply clone and run
 
-Dependencies can be install by running `pip install -r requirements.txt`
+Dependencies can be installed by running `pip install -r requirements.txt` in the project directory
 
 ## Using Honkbot
 
