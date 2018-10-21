@@ -35,6 +35,7 @@ class Honkbot():
     example:
         import honkbot
         bot = honkbot.Honkbot(discord_apikey)
+        bot.run()
     """
 
     def __init__(self, discord_api, speedrun_api=None, google_api=None):
@@ -59,16 +60,14 @@ class Honkbot():
         self.google_api = google_api
 
         self.client = discord.Client()
-        try:
-            self.client.run(self.discord_api)
-        except Exception as e:
-            logger.error("!!! Caught exception: {0}".format(e))
-            return False
 
         self.lastRecordSearch = ""
 
         self.on_ready = self.client.event(self.on_ready)
         self.on_message = self.client.event(self.on_message)
+
+    def run(self):
+        self.client.run(self.discord_api)
 
     #@self.client.event
     async def on_ready(self):
@@ -89,22 +88,22 @@ class Honkbot():
             await self.client.send_message(message.channel, commands)
 
         elif message.content.startswith('!youtube'):
-            self.search_youtube(message)
+            await self.search_youtube(message)
         elif message.content.startswith('!image'):
-            self.search_google_images(message)
+            await self.search_google_images(message)
         elif message.content.startswith('!insult'):
             if len(message.content.lower().split(" ")) > 1:
-                self.name = message.content.lower().split(" ")[1]
+                name = message.content.lower().split(" ")[1]
             else:
                 await self.client.send_message(message.channel, "No one to insult :(")
                 return
-            self.get_insult(self.name)
+            await self.get_insult(message, name=name)
         elif message.content.startswith('!ranatalus'):
-            self.get_insult("ranatalus")
+            await self.get_insult(message, name="ranatalus")
         elif message.content.startswith('!record'):
-            self.get_record(message)
+            await self.get_record(message)
         elif message.content.startswith('!eamuse'):
-            self.get_eamuse_maintenance()
+            await self.get_eamuse_maintenance()
 
         elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
             # HONK WINS AGAIN
@@ -196,7 +195,7 @@ class Honkbot():
                             begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
                             end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
 
-    async def get_insult(self, name):
+    async def get_insult(self, message, name):
         """
         Returns a scathing insult about the given name
 
@@ -413,4 +412,5 @@ if "__main__" in __name__:
     speedrun_api = os.getenv("SPEEDRUN_API_KEY")
     google_api = os.getenv("GOOGLE_API_KEY")
 
-    bot = Honkbot(discord_api) 
+    bot = Honkbot(discord_api, speedrun_api, google_api)
+    bot.run()
