@@ -9,6 +9,12 @@ A list of things that it does:
 * Insults people
 * Gives information on eAmuse downtime
 
+## Installing
+
+No special installations needed for the bot itself. Simply clone and run
+
+Dependencies can be install by running `pip install -r requirements.txt`
+
 ## Using Honkbot
 
 Calling honkbot.py directly will pull in environment variables and run the bot. You can also call the bot in python
