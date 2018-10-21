@@ -23,7 +23,7 @@ Example:
 ```python
 import honkbot
 
-discord_apikey=asdfclkwmeroi2j34r09sdfu82oui345th
+discord_apikey = "asdfclkwmeroi2j34r09sdfu82oui345th"
 bot = honkbot.Honkbot(discord_apikey)
 ```
 
