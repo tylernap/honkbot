@@ -26,6 +26,7 @@ bot = honkbot.Honkbot(discord_apikey)
 The following are required for this bot to run correctly
 
 * Python 3.5 or higher
+
 Modules:
 * discord.py
 * python-dotenv
