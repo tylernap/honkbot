@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import asyncio
 from calendar import monthrange
 import datetime
