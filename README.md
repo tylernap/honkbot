@@ -1,6 +1,6 @@
 # HONKBOT
 
-A dumbass bot that interfaces with discord to do dumb stuff
+A mission-critical bot that interfaces with discord to do extremely important stuff
 
 A list of things that it does:
 * Adds people to groups
