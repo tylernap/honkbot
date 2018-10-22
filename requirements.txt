@@ -1,2 +1,4 @@
 discord.py>=0.16.12
 python-dotenv>=0.9.1
+pytz==2018.5
+requests==2.20.0
