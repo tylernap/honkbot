@@ -102,7 +102,7 @@ class Honkbot:
         elif message.content.startswith('!eamuse'):
             await self.get_eamuse_maintenance(message)
 
-        elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
+        elif "honk" in message.content.lower() and message.author != self.client.user:
             # HONK WINS AGAIN
             if "Skeeter" in message.author.name:
                 await self.client.send_message(message.channel, "beep")
