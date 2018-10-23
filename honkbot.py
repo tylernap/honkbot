@@ -81,7 +81,7 @@ class Honkbot():
             await self.client.send_message(message.author, test)
 
         elif message.content.startswith('!join'):
-            self.set_channel_role(message)
+            await self.set_channel_role(message)
 
         elif message.content.startswith('!help'):
             commands = "".join(["Commands are: ",", ".join(self.command_list)])
