@@ -13,7 +13,7 @@ import dotenv
 logging.basicConfig(stream=sys.stdout, level=logging.WARN)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-logger.warning("Starting Honkbot...")
+logger.info("Starting Honkbot...")
 
 
 class Honkbot:
@@ -68,21 +68,21 @@ class Honkbot:
 
     # @self.client.event
     async def on_ready(self):
-        logger.warning('Logged in as {0} - {1}'.format(self.client.user.name, self.client.user.id))
+        logger.info('Logged in as {0} - {1}'.format(self.client.user.name, self.client.user.id))
 
     # @self.client.event
     # @asyncio.coroutine
     async def on_message(self, message):
         if message.content.startswith('!test'):
             test = "test"
-            self.client.send_message(message.author, test)
+            await self.client.send_message(message.author, test)
 
         elif message.content.startswith('!join'):
             await self.set_channel_role(message)
 
         elif message.content.startswith('!help'):
             commands = "".join(["Commands are: ", ", ".join(self.command_list)])
-            self.client.send_message(message.channel, commands)
+            await self.client.send_message(message.channel, commands)
 
         elif message.content.startswith('!youtube'):
             await self.search_youtube(message)
@@ -92,7 +92,7 @@ class Honkbot:
             if len(message.content.lower().split(" ")) > 1:
                 name = message.content.lower().split(" ")[1]
             else:
-                self.client.send_message(message.channel, "No one to insult :(")
+                await self.client.send_message(message.channel, "No one to insult :(")
                 return
             await self.get_insult(message, name=name)
         elif message.content.startswith('!ranatalus'):
@@ -105,13 +105,13 @@ class Honkbot:
         elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
             # HONK WINS AGAIN
             if "Skeeter" in message.author.name:
-                self.client.send_message(message.channel, "beep")
+                await self.client.send_message(message.channel, "beep")
             else:
-                self.client.send_message(message.channel, "HONK!")
+                await self.client.send_message(message.channel, "HONK!")
 
         elif message.content.startswith('!'):
             commands = "".join(["Commands are: ", ", ".join(self.command_list)])
-            self.client.send_message(message.channel, commands)
+            await self.client.send_message(message.channel, commands)
 
     async def get_eamuse_maintenance(self, message):
         """
@@ -141,11 +141,11 @@ class Honkbot:
             begin_time = east_time.replace(hour=int(maint['ddr'][0].split(":")[0]), minute=0)
             end_time = east_time.replace(hour=int(maint['ddr'][1].split(":")[0]), minute=0)
             if begin_time <= east_time <= end_time:
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel,
                     "DDR: :x: - {0}-{1}".format(maint['ddr'][0], maint['ddr'][1]))
             else:
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel,
                     "DDR: :white_check_mark: - {0}-{1}".format(maint['ddr'][0], maint['ddr'][1]))
 
@@ -155,24 +155,24 @@ class Honkbot:
                     begin_time.astimezone(pytz.timezone("America/New_York"))
                     <= east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
             ):
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel,
                     "Other: :x: - {0}-{1}".format(
                         begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
                         end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
             else:
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel,
                     "Other: :white_check_mark: - {0}-{1}".format(
                         begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
                         end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
         else:
-            self.client.send_message(
+            await self.client.send_message(
                 message.channel, "DDR: :white_check_mark: - no maintenance today")
             begin_time = today.replace(hour=int(maint['other'][0].split(":")[0]), minute=0)
             end_time = today.replace(hour=int(maint['other'][1].split(":")[0]), minute=0)
             if east_time.weekday() in [4, 5]:
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel, "Other: :white_check_mark: - no maintenance today")
             else:
                 if (
@@ -180,13 +180,13 @@ class Honkbot:
                         <= east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
                 ):
 
-                    self.client.send_message(
+                    await self.client.send_message(
                         message.channel,
                         "Other: :x: - {0}-{1}".format(
                             begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
                             end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
                 else:
-                    self.client.send_message(
+                    await self.client.send_message(
                         message.channel,
                         "Other: :white_check_mark: - {0}-{1}".format(
                             begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
@@ -201,7 +201,7 @@ class Honkbot:
         """
         r = requests.get("http://quandyfactory.com/insult/json")
         insult = r.json()["insult"]
-        self.client.send_message(message.channel, insult.replace("Thou art", "{0} is".format(name)))
+        await self.client.send_message(message.channel, insult.replace("Thou art", "{0} is".format(name)))
 
     async def get_record(self, message):
         """
@@ -212,7 +212,7 @@ class Honkbot:
         """
 
         if not self.speedrun_api:
-            self.client.send_message(
+            await self.client.send_message(
                 message.channel,
                 "Sorry, cant do that right now! Ask your admin to enable"
             )
@@ -261,36 +261,36 @@ class Honkbot:
                             r = requests.get("".join([base_url, "users/", user_id]), headers=auth)
                             user_name = r.json()['data']['names']['international']
 
-                            self.client.send_message(
+                            await self.client.send_message(
                                 message.channel,
                                 "The Any% record for {0} is {1} by {2}".format(game_name, record, user_name))
                 
                         else:
-                            self.client.send_message(
+                            await self.client.send_message(
                                 message.channel,
                                 "There are no Any% records for {}".format(game_name))
                     elif len(results) < 5:
                         names = []
                         for result in results:
                             names.append(result['names']['international'])
-                        self.client.send_message(
+                        await self.client.send_message(
                             message.channel,
                             "Multiple results. Do a search for the following: {}".format(
                                 ", ".join(names)))
-                        self.client.send_message(
+                        await self.client.send_message(
                             message.channel,
                             "If you want the first result, redo the search")
                     else:
-                        self.client.send_message(
+                        await self.client.send_message(
                             message.channel,
                             "Too many results! Be a little more specific")
                 else:
-                    self.client.send_message(
+                    await self.client.send_message(
                         message.channel,
                         "No games with that name found!")
             self.lastRecordSearch = query
         else:
-            self.client.send_message(
+            await self.client.send_message(
                 message.channel,
                 "You gotta give me a game to look for...")
 
@@ -303,7 +303,7 @@ class Honkbot:
         """
 
         if not self.google_api:
-            self.client.send_message(
+            await self.client.send_message(
                 message.channel,
                 "Sorry, cant do that right now! Ask your admin to enable"
             )
@@ -321,13 +321,13 @@ class Honkbot:
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
-                    self.client.send_message(message.channel, response)
+                    await self.client.send_message(message.channel, response)
                 except KeyError:
-                    self.client.send_message(message.channel, "No results found for {0} :(".format(query))
+                    await self.client.send_message(message.channel, "No results found for {0} :(".format(query))
             else:
-                self.client.send_message(message.channel, "Query too big!")
+                await self.client.send_message(message.channel, "Query too big!")
         else:
-            self.client.send_message(message.channel, "Usage: !image <search term>")
+            await self.client.send_message(message.channel, "Usage: !image <search term>")
 
     async def search_youtube(self, message):
         """
@@ -338,7 +338,7 @@ class Honkbot:
         """
 
         if not self.google_api:
-            self.client.send_message(
+            await self.client.send_message(
                 message.channel,
                 "Sorry, cant do that right now! Ask your admin to enable"
             )
@@ -355,19 +355,21 @@ class Honkbot:
                 try:
                     response = r.json()['items'][0]["id"]["videoId"]
                 except IndexError:
-                    self.client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
+                    await self.client.send_message(message.channel, "Could not find any videos with search {0}"
+                                                   .format(query))
                     return
 
                 if response:
-                    self.client.send_message(message.channel, "https://youtu.be/{0}".format(response))
+                    await self.client.send_message(message.channel, "https://youtu.be/{0}".format(response))
                 else:
-                    self.client.send_message(message.channel, "Could not find any videos with search {0}".format(query))
+                    await self.client.send_message(message.channel, "Could not find any videos with search {0}"
+                                                   .format(query))
                     return
             else:
-                self.client.send_message(message.channel, "Query too long!")
+                await self.client.send_message(message.channel, "Query too long!")
                 return
         else:
-            self.client.send_message(message.channel, "Usage: !youtube <search terms>")
+            await self.client.send_message(message.channel, "Usage: !youtube <search terms>")
 
     async def set_channel_role(self, message):
         """
@@ -379,11 +381,11 @@ class Honkbot:
 
         allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
         if len(message.content.split(" ")) != 2:
-            self.client.send_message(message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
+            await self.client.send_message(message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
             return
         role = message.content.split(" ")[1]
         if role not in allowed_roles:
-            self.client.send_message(message.channel, "".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
+            await self.client.send_message(message.channel, "".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
         else:
             role_object = discord.utils.get(message.server.roles, name=role)
             try:
@@ -391,10 +393,10 @@ class Honkbot:
                     await self.client.replace_roles(message.author, role_object)
                 else:
                     await self.client.add_roles(message.author, role_object) 
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel, "Adding {0} to {1}".format(message.author.name, role))
             except Forbidden:
-                self.client.send_message(
+                await self.client.send_message(
                     message.channel, "I do not have permissions to assign roles right now. Sorry!")
 
 
