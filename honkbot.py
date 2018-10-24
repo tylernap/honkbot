@@ -137,6 +137,7 @@ class Honkbot:
             maint['ddr'] = None
             maint['other'] = self.eamuse_maintenance['normal']
 
+
         if maint['ddr']:
             begin_time = east_time.replace(hour=int(maint['ddr'][0].split(":")[0]), minute=0)
             end_time = east_time.replace(hour=int(maint['ddr'][1].split(":")[0]), minute=0)
