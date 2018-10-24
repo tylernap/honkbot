@@ -221,7 +221,7 @@ class Honkbot:
         search = message.content.lower().split(" ")
         del search[0]
         if search:
-            auth = {"Authorization": "Token {}".format(speedrun_api)}
+            auth = {"Authorization": "Token {}".format(self.speedrun_api)}
             query = " ".join(search)
             results = []
             if len(search) < 100:
@@ -250,11 +250,12 @@ class Honkbot:
                             if category['name'].startswith('Any%'):
                                 game_category = category
                                 break
+                        game_records_url = ""
                         if game_category:
                             for link in game_category['links']:
                                 if "records" in link['rel']:
-                                    game_records = link['uri']
-                            r = requests.get(game_records, headers=auth)
+                                    game_records_url = link['uri']
+                            r = requests.get(game_records_url, headers=auth)
                             run = r.json()['data'][0]['runs'][0]['run']
                             record = run['times']['realtime'][2:]
                             user_id = run['players'][0]['id']
@@ -317,7 +318,7 @@ class Honkbot:
                 url = (
                     "https://www.googleapis.com/customsearch/v1?q={}".format(search) +
                     "&cx=009855409252983983547:3xrcodch8sc&searchType=image" +
-                    "&key={}".format(google_api))
+                    "&key={}".format(self.google_api))
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
@@ -350,10 +351,10 @@ class Honkbot:
             query = " ".join(search)
             if len(query) < 250:
                 url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={0}&key={1}"\
-                    .format(query, google_api)
+                    .format(query, self.google_api)
                 r = requests.get(url)
                 try:
-                    response = r.json()['items'][0]["id"]["videoId"]
+                    response = r.json()["items"][0]["id"]["videoId"]
                 except IndexError:
                     await self.client.send_message(message.channel, "Could not find any videos with search {0}"
                                                    .format(query))
@@ -403,9 +404,9 @@ class Honkbot:
 if "__main__" in __name__:
 
     dotenv.load_dotenv()
-    discord_api = os.getenv("DISCORD_API_KEY")
-    speedrun_api = os.getenv("SPEEDRUN_API_KEY")
-    google_api = os.getenv("GOOGLE_API_KEY")
+    discord_api_key = os.getenv("DISCORD_API_KEY")
+    speedrun_api_key = os.getenv("SPEEDRUN_API_KEY")
+    google_api_key = os.getenv("GOOGLE_API_KEY")
 
-    bot = Honkbot(discord_api, speedrun_api, google_api)
+    bot = Honkbot(discord_api_key, speedrun_api_key, google_api_key)
     bot.run()
