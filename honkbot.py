@@ -103,7 +103,7 @@ class Honkbot():
         elif message.content.startswith('!record'):
             await self.get_record(message)
         elif message.content.startswith('!eamuse'):
-            await self.get_eamuse_maintenance()
+            await self.get_eamuse_maintenance(message)
 
         elif "honk" in message.content.lower() and "bot4u" not in message.author.name:
             # HONK WINS AGAIN
@@ -116,7 +116,7 @@ class Honkbot():
             commands = "".join(["Commands are: ",", ".join(self.command_list)])
             await self.client.send_message(message.channel, commands)
 
-    async def get_eamuse_maintenance(self):
+    async def get_eamuse_maintenance(self, message):
         """
         Gets eAmusement maintenance time.
 
@@ -134,11 +134,11 @@ class Honkbot():
         firstmonday = (0 - bom) % 7 + 1
         thirdmonday = range(firstmonday, days+1, 7)[2]
         if today.day == thirdmonday:
-            maint['ddr'] = eamuse_maint['us']
-            maint['other'] = eamuse_maint['extended']
+            maint['ddr'] = self.eamuse_maint['us']
+            maint['other'] = self.eamuse_maint['extended']
         else:
             maint['ddr'] = None
-            maint['other'] = eamuse_maint['normal']
+            maint['other'] = self.eamuse_maint['normal']
 
         if maint['ddr']:
             begin_time = east_time.replace(hour=int(maint['ddr'][0].split(":")[0]),minute=0)
