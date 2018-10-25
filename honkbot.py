@@ -47,9 +47,18 @@ class Honkbot:
         ]
 
         self.eamuse_maintenance = {
-            "normal": ("20:00", "22:00"),
-            "extended": ("17:00", "22:00"),
-            "us": ("12:00", "17:00")
+            "normal": (
+                datetime.time(hour=20, tzinfo=pytz.utc),
+                datetime.time(hour=22, tzinfo=pytz.utc)
+            ),
+            "extended": (
+                datetime.time(hour=17, tzinfo=pytz.utc),
+                datetime.time(hour=22, tzinfo=pytz.utc)
+            ),
+            "us": (
+                datetime.time(hour=12, tzinfo=pytz.utc),
+                datetime.time(hour=17, tzinfo=pytz.utc)
+            ),
         }
 
         self.discord_api = discord_api
@@ -113,6 +122,24 @@ class Honkbot:
             commands = "".join(["Commands are: ", ", ".join(self.command_list)])
             await self.client.send_message(message.channel, commands)
 
+    def get_display_time(self, timing_type):
+        """
+        Get a display time for today's eAmusement maintenance time. Includes an
+        emoji for if the current time is within that time.
+
+        Uses the timing_types: "us", "normal", "extended" from self
+        """
+        today = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        begin_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][0])
+        end_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][1])
+        if begin_datetime <= today <= end_datetime:
+            emoji = ":x:"
+        else:
+            emoji = ":white_check_mark:"
+        begin_time = begin_datetime.astimezone(pytz.timezone("America/New_York"))
+        end_time = end_datetime.astimezone(pytz.timezone("America/New_York"))
+        return f"{emoji} - {begin_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')}"
+
     async def get_eamuse_maintenance(self, message):
         """
         Gets eAmusement maintenance time.
@@ -123,75 +150,17 @@ class Honkbot:
         Required:
         """
 
-        maint = {}
-        today = datetime.datetime.utcnow()
-        today = today.replace(tzinfo=pytz.utc)
-        east_time = today.astimezone(pytz.timezone("America/New_York"))
-        bom, days = monthrange(today.year, today.month)
-        first_monday = (0 - bom) % 7 + 1
-        third_monday = range(first_monday, days+1, 7)[2]
-        if today.day == third_monday:
-            maint['ddr'] = self.eamuse_maintenance['us']
-            maint['other'] = self.eamuse_maintenance['extended']
+        today = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        # The "third" week is the 15th through the 21st
+        if today.weekday() == 1 and 15 <= today.day <= 21:
+            ddr_message = self.get_display_time("us")
+            other_message = self.get_display_time("extended")
         else:
-            maint['ddr'] = None
-            maint['other'] = self.eamuse_maintenance['normal']
+            ddr_message = ":white_check_mark: - no maintenance today"
+            other_message = self.get_display_time("normal")
 
-
-        if maint['ddr']:
-            begin_time = east_time.replace(hour=int(maint['ddr'][0].split(":")[0]), minute=0)
-            end_time = east_time.replace(hour=int(maint['ddr'][1].split(":")[0]), minute=0)
-            if begin_time <= east_time <= end_time:
-                await self.client.send_message(
-                    message.channel,
-                    "DDR: :x: - {0}-{1}".format(maint['ddr'][0], maint['ddr'][1]))
-            else:
-                await self.client.send_message(
-                    message.channel,
-                    "DDR: :white_check_mark: - {0}-{1}".format(maint['ddr'][0], maint['ddr'][1]))
-
-            begin_time = today.replace(hour=int(maint['other'][0].split(":")[0]), minute=0)
-            end_time = today.replace(hour=int(maint['other'][1].split(":")[0]), minute=0)
-            if (
-                    begin_time.astimezone(pytz.timezone("America/New_York"))
-                    <= east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
-            ):
-                await self.client.send_message(
-                    message.channel,
-                    "Other: :x: - {0}-{1}".format(
-                        begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                        end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
-            else:
-                await self.client.send_message(
-                    message.channel,
-                    "Other: :white_check_mark: - {0}-{1}".format(
-                        begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                        end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
-        else:
-            await self.client.send_message(
-                message.channel, "DDR: :white_check_mark: - no maintenance today")
-            begin_time = today.replace(hour=int(maint['other'][0].split(":")[0]), minute=0)
-            end_time = today.replace(hour=int(maint['other'][1].split(":")[0]), minute=0)
-            if east_time.weekday() in [4, 5]:
-                await self.client.send_message(
-                    message.channel, "Other: :white_check_mark: - no maintenance today")
-            else:
-                if (
-                        begin_time.astimezone(pytz.timezone("America/New_York"))
-                        <= east_time <= end_time.astimezone(pytz.timezone("America/New_York"))
-                ):
-
-                    await self.client.send_message(
-                        message.channel,
-                        "Other: :x: - {0}-{1}".format(
-                            begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                            end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
-                else:
-                    await self.client.send_message(
-                        message.channel,
-                        "Other: :white_check_mark: - {0}-{1}".format(
-                            begin_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M"),
-                            end_time.astimezone(pytz.timezone("America/New_York")).strftime("%H:%M")))
+        await self.client.send_message(message.channel, f"DDR: {ddr_message}")
+        await self.client.send_message(message.channel, f"Other: {other_message}")
 
     async def get_insult(self, message, name):
         """
