@@ -1,4 +1,3 @@
-from calendar import monthrange
 import datetime
 import discord
 import logging
@@ -172,7 +171,7 @@ class Honkbot:
         """
         r = requests.get("http://quandyfactory.com/insult/json")
         insult = r.json()["insult"]
-        await self.client.send_message(message.channel, insult.replace("Thou art", "{0} is".format(name)))
+        await self.client.send_message(message.channel, insult.replace("Thou art", f"{name} is"))
 
     async def get_record(self, message):
         """
@@ -235,8 +234,8 @@ class Honkbot:
 
                             await self.client.send_message(
                                 message.channel,
-                                "The Any% record for {0} is {1} by {2}".format(game_name, record, user_name))
-                
+                                f"The Any% record for {game_name} is {record} by {user_name}")
+
                         else:
                             await self.client.send_message(
                                 message.channel,
@@ -286,16 +285,18 @@ class Honkbot:
         if search:
             query = " ".join(search)
             if len(query) < 150:
+                cx_id = "009855409252983983547:3xrcodch8sc"
                 url = (
-                    "https://www.googleapis.com/customsearch/v1?q={}".format(search) +
-                    "&cx=009855409252983983547:3xrcodch8sc&searchType=image" +
-                    "&key={}".format(self.google_api))
+                        f"https://www.googleapis.com/customsearch/v1?q={search}" +
+                        f"&cx={cx_id}&searchType=image" + f"&key={self.google_api}"
+                )
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
                     await self.client.send_message(message.channel, response)
                 except KeyError:
-                    await self.client.send_message(message.channel, "No results found for {0} :(".format(query))
+                    await self.client.send_message(message.channel,
+                                                   f"No results found for {query} :(")
             else:
                 await self.client.send_message(message.channel, "Query too big!")
         else:
@@ -321,21 +322,23 @@ class Honkbot:
         if search:
             query = " ".join(search)
             if len(query) < 250:
-                url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q={0}&key={1}"\
-                    .format(query, self.google_api)
-                r = requests.get(url)
+                google_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video"
+                search_query = f"&q={query}&key={self.google_api}"
+                r = requests.get(f"{google_url}{search_query}")
                 try:
                     response = r.json()["items"][0]["id"]["videoId"]
                 except IndexError:
-                    await self.client.send_message(message.channel, "Could not find any videos with search {0}"
-                                                   .format(query))
+                    await self.client.send_message(
+                        message.channel,
+                        f"Could not find any videos with search {query}"
+                    )
                     return
 
                 if response:
-                    await self.client.send_message(message.channel, "https://youtu.be/{0}".format(response))
+                    await self.client.send_message(message.channel, f"https://youtu.be/{response}")
                 else:
-                    await self.client.send_message(message.channel, "Could not find any videos with search {0}"
-                                                   .format(query))
+                    await self.client.send_message(message.channel,
+                                                   f"Could not find any videos with search {query}")
                     return
             else:
                 await self.client.send_message(message.channel, "Query too long!")
@@ -353,18 +356,20 @@ class Honkbot:
 
         allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
         if len(message.content.split(" ")) != 2:
-            await self.client.send_message(message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
+            await self.client.send_message(
+                message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
             return
         role = message.content.split(" ")[1]
         if role not in allowed_roles:
-            await self.client.send_message(message.channel, "".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
+            await self.client.send_message(
+                message.channel, "".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
         else:
             role_object = discord.utils.get(message.server.roles, name=role)
             try:
                 if message.author.roles:
                     await self.client.replace_roles(message.author, role_object)
                 else:
-                    await self.client.add_roles(message.author, role_object) 
+                    await self.client.add_roles(message.author, role_object)
                 await self.client.send_message(
                     message.channel, "Adding {0} to {1}".format(message.author.name, role))
             except Forbidden:
@@ -373,7 +378,6 @@ class Honkbot:
 
 
 if "__main__" in __name__:
-
     dotenv.load_dotenv()
     discord_api_key = os.getenv("DISCORD_API_KEY")
     speedrun_api_key = os.getenv("SPEEDRUN_API_KEY")
