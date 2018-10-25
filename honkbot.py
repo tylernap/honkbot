@@ -150,9 +150,10 @@ class Honkbot:
         Required:
         """
 
-        today = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        today_in_japan = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("Japan"))
         # The "third" week is the 15th through the 21st
-        if today.weekday() == 1 and 15 <= today.day <= 21:
+        # If right now in Japan it's the third Tuesday
+        if today_in_japan.weekday() == 1 and 15 <= today_in_japan.day <= 21:
             ddr_message = self.get_display_time("us")
             other_message = self.get_display_time("extended")
         else:
