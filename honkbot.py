@@ -139,6 +139,33 @@ class Honkbot:
         end_time = end_datetime.astimezone(pytz.timezone("America/New_York"))
         return f"{emoji} - {begin_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')}"
 
+    def is_extended_maintenance_time(self):
+        """
+        This function returns true if this represents the Monday that Americans
+        have to deal with maintenance.
+
+        Maintenance is on the Third Tuesday in Japan.
+
+        Gotchas:
+            -The second Monday in America can be the Third Tuesday in Japan.
+            -We literally don't care about this at all if it's Tuesday in
+             in America, even if it's Tuesday in Japan
+            -We DO care about it if it's Monday in America but still Monday in Japan
+
+        :return: True if this is a Monday that Americans have to deal with maintenance
+                 False if it's not
+        """
+        today_in_japan = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("Japan"))
+        tomorrow_in_japan = today_in_japan + datetime.timedelta(days=1)
+        today_in_eastern = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("America/New_York"))
+
+        # If it's Monday in America, and either the third Tuesday or the Monday before that in Japan
+        if today_in_eastern.weekday == 0 and (
+                (today_in_japan.weekday == 1 and 15 <= today_in_japan.day <= 21) or (
+                tomorrow_in_japan.weekday == 1 and 15 <= tomorrow_in_japan.day <= 21)):
+            return True
+        return False
+
     async def get_eamuse_maintenance(self, message):
         """
         Gets eAmusement maintenance time.
@@ -149,10 +176,7 @@ class Honkbot:
         Required:
         """
 
-        today_in_japan = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("Japan"))
-        # The "third" week is the 15th through the 21st
-        # If right now in Japan it's the third Tuesday
-        if today_in_japan.weekday() == 1 and 15 <= today_in_japan.day <= 21:
+        if self.is_extended_maintenance_time():
             ddr_message = self.get_display_time("us")
             other_message = self.get_display_time("extended")
         else:
