@@ -56,4 +56,4 @@ Want to help keep Honkbot awesome? Great! Just a couple things:
 * Contributors will follow a [Feature branch workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow). All new code will be done in a separate branch and merged via PR
 * `master` is protected so that the code owner must approve all changes
 
-This is a test
+This is another test
