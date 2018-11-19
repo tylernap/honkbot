@@ -168,9 +168,9 @@ class Honkbot:
         today_in_eastern = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("America/New_York"))
 
         # If it's Monday in America, and either the third Tuesday or the Monday before that in Japan
-        if today_in_eastern.weekday == 0 and (
-                (today_in_japan.weekday == 1 and 15 <= today_in_japan.day <= 21) or (
-                tomorrow_in_japan.weekday == 1 and 15 <= tomorrow_in_japan.day <= 21)):
+        if today_in_eastern.weekday() == 0 and (
+                (today_in_japan.weekday() == 1 and 15 <= today_in_japan.day <= 21) or (
+                tomorrow_in_japan.weekday() == 1 and 15 <= tomorrow_in_japan.day <= 21)):
             return True
         return False
 
