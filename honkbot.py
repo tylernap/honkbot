@@ -125,7 +125,7 @@ class Honkbot:
             else:
                 await self.client.send_message(message.channel, "HONK!")
 
-        elif message.content.startswith('!'):
+        elif message.content.startswith('!') and not set(message.content).issubset(set('! ')):
             commands = "".join(["Commands are: ", ", ".join(self.command_list)])
             await self.client.send_message(message.channel, commands)
 
