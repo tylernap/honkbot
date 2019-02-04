@@ -1,5 +1,6 @@
 import datetime
 import discord
+from discord.ext import commands
 import logging
 import os
 import pytz
@@ -17,7 +18,7 @@ logger.setLevel(logging.INFO)
 logger.info("Starting Honkbot...")
 
 
-class Honkbot:
+class Honkbot(commands.Bot):
     """
     HONK
 
@@ -37,6 +38,12 @@ class Honkbot:
     """
 
     def __init__(self, discord_api, speedrun_api=None, google_api=None):
+        super().__init__(command_prefix='!')
+        self.add_command(self.banner)
+        self.add_command(self.jacket)
+        self.add_command(self.test)
+        self.add_command(self.join)
+
         self.command_list = [
             "!join",
             "!image",
@@ -68,66 +75,87 @@ class Honkbot:
         self.speedrun_api = speedrun_api
         self.google_api = google_api
 
-        self.client = discord.Client()
-
         self.lastRecordSearch = ""
 
-        self.on_ready = self.client.event(self.on_ready)
-        self.on_message = self.client.event(self.on_message)
-
     def run(self):
-        self.client.run(self.discord_api)
+        super().run(self.discord_api)
 
-    # @self.client.event
     async def on_ready(self):
-        logger.info('Logged in as {0} - {1}'.format(self.client.user.name, self.client.user.id))
+        logger.info('Logged in as {0} - {1}'.format(self.user, self.user.id))
 
-    # @self.client.event
-    # @asyncio.coroutine
-    async def on_message(self, message):
-        if message.content.startswith('!test'):
-            test = "test"
-            await self.client.send_message(message.author, test)
 
-        elif message.content.startswith('!join'):
-            await self.set_channel_role(message)
 
-        elif message.content.startswith('!help'):
-            commands = "".join(["Commands are: ", ", ".join(self.command_list)])
-            await self.client.send_message(message.channel, commands)
 
-        elif message.content.startswith('!youtube'):
-            await self.search_youtube(message)
-        elif message.content.startswith('!image'):
-            await self.search_google_images(message)
-        elif message.content.startswith('!insult'):
-            if len(message.content.lower().split(" ")) > 1:
-                name = message.content.lower().split(" ")[1]
-            else:
-                await self.client.send_message(message.channel, "No one to insult :(")
-                return
-            await self.get_insult(message, name=name)
-        elif message.content.startswith('!ranatalus'):
-            await self.get_insult(message, name="ranatalus")
-        elif message.content.startswith('!record'):
-            await self.get_record(message)
-        elif message.content.startswith('!eamuse'):
-            await self.get_eamuse_maintenance(message)
-        elif message.content.startswith('!jacket'):
-            await self.get_jacket(message)
-        elif message.content.startswith('!banner'):
-            await self.get_banner(message)
+        #
+        # elif message.content.startswith('!help'):
+        #     commands = "".join(["Commands are: ", ", ".join(self.command_list)])
+        #     await self.client.send_message(message.channel, commands)
+        #
+        # elif message.content.startswith('!youtube'):
+        #     await self.search_youtube(message)
+        # elif message.content.startswith('!image'):
+        #     await self.search_google_images(message)
+        # elif message.content.startswith('!insult'):
+        #     if len(message.content.lower().split(" ")) > 1:
+        #         name = message.content.lower().split(" ")[1]
+        #     else:
+        #         await self.client.send_message(message.channel, "No one to insult :(")
+        #         return
+        #     await self.get_insult(message, name=name)
+        # elif message.content.startswith('!ranatalus'):
+        #     await self.get_insult(message, name="ranatalus")
+        # elif message.content.startswith('!record'):
+        #     await self.get_record(message)
+        # elif message.content.startswith('!eamuse'):
+        #     await self.get_eamuse_maintenance(message)
+        #
+        # elif "honk" in message.content.lower() and message.author != self.client.user:
+        #     # HONK WINS AGAIN
+        #     if "Skeeter" in message.author.name:
+        #         await self.client.send_message(message.channel, "beep")
+        #     else:
+        #         await self.client.send_message(message.channel, "HONK!")
+        #
+        # elif message.content.startswith('!') and not set(message.content).issubset(set('! ')):
+        #     command_list = "".join(["Commands are: ", ", ".join(self.command_list)])
+        #     await self.say(command_list)
 
-        elif "honk" in message.content.lower() and message.author != self.client.user:
-            # HONK WINS AGAIN
-            if "Skeeter" in message.author.name:
-                await self.client.send_message(message.channel, "beep")
-            else:
-                await self.client.send_message(message.channel, "HONK!")
+    @commands.command()
+    async def test(self):
+        await self.say("test")
 
-        elif message.content.startswith('!') and not set(message.content).issubset(set('! ')):
-            commands = "".join(["Commands are: ", ", ".join(self.command_list)])
-            await self.client.send_message(message.channel, commands)
+    @commands.command(pass_context=True)
+    async def join(self, ctx, *role_string: str):
+        """
+        Sets a role to a user based on the given input
+
+        User Arguments:
+            *role_String: Used to choose which role to assign. Gives a helpful error
+                message if there are 0 or >1 arguments, or if the role is not a
+                valid choice.
+
+        Implementation Notes: In the future it may be safer to use role: discord.Role
+        However, this would need custom error handling OUTSIDE of this function for
+        any mistakes in typing, which we don't want to do right now. Maybe for 1.0.0?
+        """
+
+        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
+
+        if len(role_string) != 1:
+            await self.say("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
+        elif role_string[0] not in allowed_roles:
+            await self.say("".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
+        else:
+            role = discord.utils.get(ctx.message.server.roles, name=role_string[0])
+            try:
+                user = ctx.message.author
+                if user.roles:
+                    await self.replace_roles(user, role)
+                else:
+                    await self.add_roles(user, role)
+                await self.say("Adding {0} to {1}".format(user.display_name, role))
+            except Forbidden:
+                await self.say("I do not have permissions to assign roles right now. Sorry!")
 
     def get_display_time(self, timing_type):
         """
@@ -378,35 +406,7 @@ class Honkbot:
         else:
             await self.client.send_message(message.channel, "Usage: !youtube <search terms>")
 
-    async def set_channel_role(self, message):
-        """
-        Sets a role to a user based on the given input
 
-        Requires:
-            message (obj) - message object from discord object
-        """
-
-        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
-        if len(message.content.split(" ")) != 2:
-            await self.client.send_message(
-                message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
-            return
-        role = message.content.split(" ")[1]
-        if role not in allowed_roles:
-            await self.client.send_message(
-                message.channel, "".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
-        else:
-            role_object = discord.utils.get(message.server.roles, name=role)
-            try:
-                if message.author.roles:
-                    await self.client.replace_roles(message.author, role_object)
-                else:
-                    await self.client.add_roles(message.author, role_object)
-                await self.client.send_message(
-                    message.channel, "Adding {0} to {1}".format(message.author.name, role))
-            except Forbidden:
-                await self.client.send_message(
-                    message.channel, "I do not have permissions to assign roles right now. Sorry!")
 
     def search_remy_song(self, query: str) -> Optional[BeautifulSoup]:
         """
@@ -464,15 +464,15 @@ class Honkbot:
         else:
             return f"Could not find a song that looks like: {query}"
 
-    async def get_jacket(self, message):
-        _, _, query = message.content.partition(" ")
-        response = self.get_remy_image(query, 'jacket')
-        await self.client.send_message(message.channel, response)
+    @commands.command()
+    async def jacket(self, title: str):
+        response = self.get_remy_image(title, 'jacket')
+        await self.say(response)
 
-    async def get_banner(self, message):
-        _, _, query = message.content.partition(" ")
-        response = self.get_remy_image(query, 'banner')
-        await self.client.send_message(message.channel, response)
+    @commands.command()
+    async def banner(self, title: str):
+        response = self.get_remy_image(title, 'banner')
+        await self.say(response)
 
 
 if "__main__" in __name__:
