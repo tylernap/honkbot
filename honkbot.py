@@ -43,17 +43,14 @@ class Honkbot(commands.Bot):
         self.add_command(self.jacket)
         self.add_command(self.test)
         self.add_command(self.join)
+        self.add_command(self.insult)
+        self.add_command(self.ranatalus)
+        self.add_command(self.image)
 
         self.command_list = [
-            "!join",
             "!image",
             "!youtube",
-            "!ranatalus",
             "!eamuse",
-            "!help",
-            "!insult",
-            "!jacket",
-            "!banner"
         ]
 
         self.eamuse_maintenance = {
@@ -84,26 +81,10 @@ class Honkbot(commands.Bot):
         logger.info('Logged in as {0} - {1}'.format(self.user, self.user.id))
 
 
-
-
-        #
-        # elif message.content.startswith('!help'):
-        #     commands = "".join(["Commands are: ", ", ".join(self.command_list)])
-        #     await self.client.send_message(message.channel, commands)
-        #
         # elif message.content.startswith('!youtube'):
         #     await self.search_youtube(message)
         # elif message.content.startswith('!image'):
         #     await self.search_google_images(message)
-        # elif message.content.startswith('!insult'):
-        #     if len(message.content.lower().split(" ")) > 1:
-        #         name = message.content.lower().split(" ")[1]
-        #     else:
-        #         await self.client.send_message(message.channel, "No one to insult :(")
-        #         return
-        #     await self.get_insult(message, name=name)
-        # elif message.content.startswith('!ranatalus'):
-        #     await self.get_insult(message, name="ranatalus")
         # elif message.content.startswith('!record'):
         #     await self.get_record(message)
         # elif message.content.startswith('!eamuse'):
@@ -125,28 +106,27 @@ class Honkbot(commands.Bot):
         await self.say("test")
 
     @commands.command(pass_context=True)
-    async def join(self, ctx, *role_string: str):
+    async def join(self, ctx, *role: str):
         """
-        Sets a role to a user based on the given input
+        Sets the command invoker to the given role
+
+        Gives an error message if there are 0 or >1 roles specified, or if the
+        specified role is not allowed.
+
+        Allowed roles are = OH, MI, KY, PA, IN, NY
 
         User Arguments:
-            *role_String: Used to choose which role to assign. Gives a helpful error
-                message if there are 0 or >1 arguments, or if the role is not a
-                valid choice.
-
-        Implementation Notes: In the future it may be safer to use role: discord.Role
-        However, this would need custom error handling OUTSIDE of this function for
-        any mistakes in typing, which we don't want to do right now. Maybe for 1.0.0?
+            role: Choose which role to assign.
         """
 
         allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
 
-        if len(role_string) != 1:
+        if len(role) != 1:
             await self.say("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
-        elif role_string[0] not in allowed_roles:
+        elif role[0] not in allowed_roles:
             await self.say("".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
         else:
-            role = discord.utils.get(ctx.message.server.roles, name=role_string[0])
+            role = discord.utils.get(ctx.message.server.roles, name=role[0])
             try:
                 user = ctx.message.author
                 if user.roles:
@@ -222,7 +202,8 @@ class Honkbot(commands.Bot):
         await self.client.send_message(message.channel, f"DDR: {ddr_message}")
         await self.client.send_message(message.channel, f"Other: {other_message}")
 
-    async def get_insult(self, message, name):
+    @commands.command()
+    async def insult(self, *name: str):
         """
         Returns a scathing insult about the given name
 
@@ -231,7 +212,20 @@ class Honkbot(commands.Bot):
         """
         r = requests.get("http://quandyfactory.com/insult/json")
         insult = r.json()["insult"]
-        await self.client.send_message(message.channel, insult.replace("Thou art", f"{name} is"))
+        if len(name) < 1:
+            await self.say("No one to insult :(")
+        else:
+            await self.say(insult.replace("Thou art", f"{name[0]} is"))
+
+    @commands.command()
+    async def ranatalus(self):
+        """
+        Returns a scathing insult about the given name
+
+        Required:
+        name (str) - name of person to insult
+        """
+        await self.insult("ranatalus")
 
     async def get_record(self, message):
         """
@@ -325,23 +319,19 @@ class Honkbot(commands.Bot):
                 message.channel,
                 "You gotta give me a game to look for...")
 
-    async def search_google_images(self, message):
+    @commands.command()
+    async def image(self, *, search: str=None):
         """
-        Returns an image from google from the given search terms
+        Returns an image from Google from the given search terms
 
-        Requires:
-            message (obj) - message object from discord object
+        User Arguments:
+            search: The terms to use on Google Images
         """
 
         if not self.google_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
+            await self.say("Sorry, cant do that right now! Ask your admin to enable")
             return
 
-        search = message.content.split(" ")
-        del search[0]
         if search:
             query = " ".join(search)
             if len(query) < 150:
@@ -353,14 +343,13 @@ class Honkbot(commands.Bot):
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
-                    await self.client.send_message(message.channel, response)
+                    await self.say(response)
                 except KeyError:
-                    await self.client.send_message(message.channel,
-                                                   f"No results found for {query} :(")
+                    await self.say(f"No results found for {query} :(")
             else:
-                await self.client.send_message(message.channel, "Query too big!")
+                await self.say("Query too big!")
         else:
-            await self.client.send_message(message.channel, "Usage: !image <search term>")
+            await self.say("Usage: !image <search term>")
 
     async def search_youtube(self, message):
         """
