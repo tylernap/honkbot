@@ -46,6 +46,7 @@ class Honkbot(commands.Bot):
         self.add_command(self.insult)
         self.add_command(self.ranatalus)
         self.add_command(self.image)
+        self.add_command(self.youtube)
 
         self.command_list = [
             "!image",
@@ -80,11 +81,6 @@ class Honkbot(commands.Bot):
     async def on_ready(self):
         logger.info('Logged in as {0} - {1}'.format(self.user, self.user.id))
 
-
-        # elif message.content.startswith('!youtube'):
-        #     await self.search_youtube(message)
-        # elif message.content.startswith('!image'):
-        #     await self.search_google_images(message)
         # elif message.content.startswith('!record'):
         #     await self.get_record(message)
         # elif message.content.startswith('!eamuse'):
@@ -351,7 +347,8 @@ class Honkbot(commands.Bot):
         else:
             await self.say("Usage: !image <search term>")
 
-    async def search_youtube(self, message):
+    @commands.command()
+    async def youtube(self, *, search: str=None):
         """
         Returns an video from youtube from the given search terms
 
@@ -360,14 +357,9 @@ class Honkbot(commands.Bot):
         """
 
         if not self.google_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
+            await self.say("Sorry, cant do that right now! Ask your admin to enable")
             return
 
-        search = message.content.split(" ")
-        del search[0]
         if search:
             query = " ".join(search)
             if len(query) < 250:
@@ -377,23 +369,17 @@ class Honkbot(commands.Bot):
                 try:
                     response = r.json()["items"][0]["id"]["videoId"]
                 except IndexError:
-                    await self.client.send_message(
-                        message.channel,
-                        f"Could not find any videos with search {query}"
-                    )
+                    await self.say(f"Could not find any videos with search {query}")
                     return
 
                 if response:
-                    await self.client.send_message(message.channel, f"https://youtu.be/{response}")
+                    await self.say(f"https://youtu.be/{response}")
                 else:
-                    await self.client.send_message(message.channel,
-                                                   f"Could not find any videos with search {query}")
-                    return
+                    await self.say(f"Could not find any videos with search {query}")
             else:
-                await self.client.send_message(message.channel, "Query too long!")
-                return
+                await self.say("Query too long!")
         else:
-            await self.client.send_message(message.channel, "Usage: !youtube <search terms>")
+            await self.say("Usage: !youtube <search terms>")
 
 
 
