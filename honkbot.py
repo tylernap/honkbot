@@ -47,12 +47,8 @@ class Honkbot(commands.Bot):
         self.add_command(self.ranatalus)
         self.add_command(self.image)
         self.add_command(self.youtube)
-
-        self.command_list = [
-            "!image",
-            "!youtube",
-            "!eamuse",
-        ]
+        self.add_command(self.record)
+        self.add_command(self.eamuse)
 
         self.eamuse_maintenance = {
             "normal": (
@@ -83,8 +79,6 @@ class Honkbot(commands.Bot):
 
         # elif message.content.startswith('!record'):
         #     await self.get_record(message)
-        # elif message.content.startswith('!eamuse'):
-        #     await self.get_eamuse_maintenance(message)
         #
         # elif "honk" in message.content.lower() and message.author != self.client.user:
         #     # HONK WINS AGAIN
@@ -178,7 +172,8 @@ class Honkbot(commands.Bot):
             return True
         return False
 
-    async def get_eamuse_maintenance(self, message):
+    @commands.command()
+    async def eamuse(self):
         """
         Gets eAmusement maintenance time.
 
@@ -195,8 +190,8 @@ class Honkbot(commands.Bot):
             ddr_message = ":white_check_mark: - no maintenance today"
             other_message = self.get_display_time("normal")
 
-        await self.client.send_message(message.channel, f"DDR: {ddr_message}")
-        await self.client.send_message(message.channel, f"Other: {other_message}")
+        await self.say(f"DDR: {ddr_message}")
+        await self.say(f"Other: {other_message}")
 
     @commands.command()
     async def insult(self, *name: str):
@@ -223,7 +218,8 @@ class Honkbot(commands.Bot):
         """
         await self.insult("ranatalus")
 
-    async def get_record(self, message):
+    @commands.command()
+    async def record(self, *, search: str=None):
         """
         Accesses speedrun.com to get world record of given game
 
@@ -232,14 +228,9 @@ class Honkbot(commands.Bot):
         """
 
         if not self.speedrun_api:
-            await self.client.send_message(
-                message.channel,
-                "Sorry, cant do that right now! Ask your admin to enable"
-            )
+            await self.say("Sorry, cant do that right now! Ask your admin to enable")
             return
 
-        search = message.content.lower().split(" ")
-        del search[0]
         if search:
             auth = {"Authorization": "Token {}".format(self.speedrun_api)}
             query = " ".join(search)
@@ -282,38 +273,23 @@ class Honkbot(commands.Bot):
                             r = requests.get("".join([base_url, "users/", user_id]), headers=auth)
                             user_name = r.json()['data']['names']['international']
 
-                            await self.client.send_message(
-                                message.channel,
-                                f"The Any% record for {game_name} is {record} by {user_name}")
+                            await self.say(f"The Any% record for {game_name} is {record} by {user_name}")
 
                         else:
-                            await self.client.send_message(
-                                message.channel,
-                                "There are no Any% records for {}".format(game_name))
+                            await self.say("There are no Any% records for {}".format(game_name))
                     elif len(results) < 5:
                         names = []
                         for result in results:
                             names.append(result['names']['international'])
-                        await self.client.send_message(
-                            message.channel,
-                            "Multiple results. Do a search for the following: {}".format(
-                                ", ".join(names)))
-                        await self.client.send_message(
-                            message.channel,
-                            "If you want the first result, redo the search")
+                        await self.say("Multiple results. Do a search for the following: {}".format(", ".join(names)))
+                        await self.say("If you want the first result, redo the search")
                     else:
-                        await self.client.send_message(
-                            message.channel,
-                            "Too many results! Be a little more specific")
+                        await self.say("Too many results! Be a little more specific")
                 else:
-                    await self.client.send_message(
-                        message.channel,
-                        "No games with that name found!")
+                    await self.say("No games with that name found!")
             self.lastRecordSearch = query
         else:
-            await self.client.send_message(
-                message.channel,
-                "You gotta give me a game to look for...")
+            await self.say("You gotta give me a game to look for...")
 
     @commands.command()
     async def image(self, *, search: str=None):
@@ -380,8 +356,6 @@ class Honkbot(commands.Bot):
                 await self.say("Query too long!")
         else:
             await self.say("Usage: !youtube <search terms>")
-
-
 
     def search_remy_song(self, query: str) -> Optional[BeautifulSoup]:
         """
