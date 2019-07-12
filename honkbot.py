@@ -386,7 +386,7 @@ class Honkbot:
             message (obj) - message object from discord object
         """
 
-        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
+        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
         if len(message.content.split(" ")) != 2:
             await self.client.send_message(
                 message.channel, "".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
