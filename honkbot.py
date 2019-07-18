@@ -199,26 +199,26 @@ class Honkbot(commands.Bot):
         await self.say(f"Other: {other_message}")
 
     @commands.command()
-    async def insult(self, *, name: str):
+    async def insult(self, *name: str):
         """
         Returns a scathing insult about the given name.
 
         User Arguments:
             name: name of person to insult
         """
-        r = requests.get("http://quandyfactory.com/insult/json")
-        insult = r.json()["insult"]
         if len(name) < 1:
             await self.say("No one to insult :(")
         else:
-            await self.say(insult.replace("Thou art", f"{name} is"))
+            r = requests.get("http://quandyfactory.com/insult/json")
+            insult = r.json()["insult"]
+            await self.say(insult.replace("Thou art", f"{' '.join(name)} is"))
 
-    @commands.command()
-    async def ranatalus(self):
+    @commands.command(pass_context=True)
+    async def ranatalus(self, ctx):
         """
         Returns a scathing insult about this particular name.
         """
-        await self.insult("ranatalus")
+        await ctx.invoke(self.get_command("insult"), "ranatalus")
 
     @commands.command()
     async def record(self, *, search: str=None):
@@ -236,7 +236,6 @@ class Honkbot(commands.Bot):
         if search:
             auth = {"Authorization": "Token {}".format(self.speedrun_api)}
             results = []
-            logger.info(search)
             if len(search) < 100:
                 base_url = "http://www.speedrun.com/api/v1/"
                 api_next = "".join([base_url, "games?name={}".format(search)])
