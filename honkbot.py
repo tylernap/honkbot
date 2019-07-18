@@ -1,21 +1,20 @@
+# Python Standard Library
 import datetime
-import discord
-from discord.ext import commands
+import inspect
 import logging
 import os
 import pytz
-import sys
-from bs4 import BeautifulSoup
 import requests
-from typing import Optional
+import sys
 
+# Packages
+import discord
 from discord.errors import Forbidden
+from discord.ext import commands
 import dotenv
 
-logging.basicConfig(stream=sys.stdout, level=logging.WARN)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.info("Starting Honkbot...")
+# Honkbot
+import remy
 
 
 class Honkbot(commands.Bot):
@@ -39,16 +38,6 @@ class Honkbot(commands.Bot):
 
     def __init__(self, discord_api, speedrun_api=None, google_api=None):
         super().__init__(command_prefix='!')
-        self.add_command(self.banner)
-        self.add_command(self.jacket)
-        self.add_command(self.test)
-        self.add_command(self.join)
-        self.add_command(self.insult)
-        self.add_command(self.ranatalus)
-        self.add_command(self.image)
-        self.add_command(self.youtube)
-        self.add_command(self.record)
-        self.add_command(self.eamuse)
 
         self.eamuse_maintenance = {
             "normal": (
@@ -71,28 +60,47 @@ class Honkbot(commands.Bot):
 
         self.lastRecordSearch = ""
 
+        self.add_commands()
+
     def run(self):
         super().run(self.discord_api)
 
-    async def on_ready(self):
-        logger.info('Logged in as {0} - {1}'.format(self.user, self.user.id))
+    def add_commands(self):
+        """
+        Iterate through all functions this owns, and add them to the bot if they
+        have the @commands.command decorator
+        """
+        members = inspect.getmembers(self)
+        for name, member in members:
+            if isinstance(member, commands.Command):
+                if member.parent is None:
+                    self.add_command(member)
 
-        # elif message.content.startswith('!record'):
-        #     await self.get_record(message)
-        #
-        # elif "honk" in message.content.lower() and message.author != self.client.user:
-        #     # HONK WINS AGAIN
-        #     if "Skeeter" in message.author.name:
-        #         await self.client.send_message(message.channel, "beep")
-        #     else:
-        #         await self.client.send_message(message.channel, "HONK!")
-        #
-        # elif message.content.startswith('!') and not set(message.content).issubset(set('! ')):
-        #     command_list = "".join(["Commands are: ", ", ".join(self.command_list)])
-        #     await self.say(command_list)
+    async def on_ready(self):
+        logger.info(f"Logged in as {self.user} - {self.user.id}")
+
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        await self.process_commands(message)
+        await self.process_extras(message)
+
+    async def on_command_error(self, error, ctx):
+        if isinstance(error, commands.CommandNotFound):
+            await self.send_message(ctx.message.channel, "Use !help to see a list of commands")
+
+    async def process_extras(self, message):
+        if "honk" in message.content.lower():
+            if "Skeeter" in message.author.name:
+                await self.send_message(message.channel, "beep")
+            else:
+                await self.send_message(message.channel, "HONK!")
 
     @commands.command()
     async def test(self):
+        """
+        Test if the bot is working
+        """
         await self.say("test")
 
     @commands.command(pass_context=True)
@@ -103,13 +111,11 @@ class Honkbot(commands.Bot):
         Gives an error message if there are 0 or >1 roles specified, or if the
         specified role is not allowed.
 
-        Allowed roles are = OH, MI, KY, PA, IN, NY
-
         User Arguments:
-            role: Choose which role to assign.
+            role: OH, MI, KY, PA, IN, NY, or Canada
         """
 
-        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY']
+        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
 
         if len(role) != 1:
             await self.say("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
@@ -145,7 +151,8 @@ class Honkbot(commands.Bot):
         end_time = end_datetime.astimezone(pytz.timezone("America/New_York"))
         return f"{emoji} - {begin_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')}"
 
-    def is_extended_maintenance_time(self):
+    @staticmethod
+    def is_extended_maintenance_time():
         """
         This function returns true if this represents the Monday that Americans
         have to deal with maintenance.
@@ -177,10 +184,8 @@ class Honkbot(commands.Bot):
         """
         Gets eAmusement maintenance time.
 
-        DDR (US Servers) - Third Monday of the month from 12 to 5 (?)
-        Everything else - Sun-Thurs from 4 to 6. Third Monday 1 to 6 
-
-        Required:
+        Japanese Servers: 5:00 AM to 7:00 AM JST every day
+        Extended and US Servers: 3:00 AM to 7:00 AM JST on the third Tuesday
         """
 
         if self.is_extended_maintenance_time():
@@ -194,37 +199,34 @@ class Honkbot(commands.Bot):
         await self.say(f"Other: {other_message}")
 
     @commands.command()
-    async def insult(self, *name: str):
+    async def insult(self, *, name: str):
         """
-        Returns a scathing insult about the given name
+        Returns a scathing insult about the given name.
 
-        Required:
-        name (str) - name of person to insult
+        User Arguments:
+            name: name of person to insult
         """
         r = requests.get("http://quandyfactory.com/insult/json")
         insult = r.json()["insult"]
         if len(name) < 1:
             await self.say("No one to insult :(")
         else:
-            await self.say(insult.replace("Thou art", f"{name[0]} is"))
+            await self.say(insult.replace("Thou art", f"{name} is"))
 
     @commands.command()
     async def ranatalus(self):
         """
-        Returns a scathing insult about the given name
-
-        Required:
-        name (str) - name of person to insult
+        Returns a scathing insult about this particular name.
         """
         await self.insult("ranatalus")
 
     @commands.command()
     async def record(self, *, search: str=None):
         """
-        Accesses speedrun.com to get world record of given game
+        Accesses speedrun.com to get world record of given game.
 
-        Requires:
-        message (obj) - message object from discord object
+        User Arguments:
+            search: the game to search for
         """
 
         if not self.speedrun_api:
@@ -233,11 +235,11 @@ class Honkbot(commands.Bot):
 
         if search:
             auth = {"Authorization": "Token {}".format(self.speedrun_api)}
-            query = " ".join(search)
             results = []
+            logger.info(search)
             if len(search) < 100:
                 base_url = "http://www.speedrun.com/api/v1/"
-                api_next = "".join([base_url, "games?name={}".format(query)])
+                api_next = "".join([base_url, "games?name={}".format(search)])
                 while api_next:
                     r = requests.get(api_next, headers=auth)
                     for game in r.json()["data"]:
@@ -248,7 +250,7 @@ class Honkbot(commands.Bot):
                             next_page = page['uri']
                     api_next = next_page
                 if results:
-                    if query == self.lastRecordSearch:
+                    if search == self.lastRecordSearch:
                         results = [results[0]]
                     if len(results) == 1:
                         game_id = results[0]["id"]
@@ -287,14 +289,14 @@ class Honkbot(commands.Bot):
                         await self.say("Too many results! Be a little more specific")
                 else:
                     await self.say("No games with that name found!")
-            self.lastRecordSearch = query
+            self.lastRecordSearch = search
         else:
             await self.say("You gotta give me a game to look for...")
 
     @commands.command()
     async def image(self, *, search: str=None):
         """
-        Returns an image from Google from the given search terms
+        Returns an image from Google from the given search terms.
 
         User Arguments:
             search: The terms to use on Google Images
@@ -326,10 +328,10 @@ class Honkbot(commands.Bot):
     @commands.command()
     async def youtube(self, *, search: str=None):
         """
-        Returns an video from youtube from the given search terms
+        Returns a video from YouTube from the given search terms
 
-        Requires:
-            message (obj) - message object from discord object
+        User Arguments:
+            search: The terms to use on YouTube
         """
 
         if not self.google_api:
@@ -357,74 +359,35 @@ class Honkbot(commands.Bot):
         else:
             await self.say("Usage: !youtube <search terms>")
 
-    def search_remy_song(self, query: str) -> Optional[BeautifulSoup]:
-        """
-        Tries to find a certain song on RemyWiki
-
-        MediaWiki tries to match an exact article title. If it doesn't find the
-        exact title, it gives you a page with a list of suggestions. This
-        leverages that by either going to the direct page, or going to the first
-        page in the list of results.
-
-        :param query: a string representing something that's supposed to be a
-            song name to find
-        :return: a BeautifulSoup object representing a RemyWiki page for a song,
-            or None, representing a lack of results
-        """
-        search_data = {'search': f"{query} incategory:\"Songs\""}
-        remy_search = requests.post('http://remywiki.com/index.php', data=search_data)
-        remy_data = BeautifulSoup(remy_search.text, 'html.parser')
-        if remy_data.title.string.lower().startswith(query):
-            return remy_data
-        else:
-            first_result = remy_data.find("ul", {"class": "mw-search-results"})
-            if first_result:
-                song_result = requests.post(f"http://remywiki.com{first_result.li.div.a['href']}")
-                return BeautifulSoup(song_result.text, 'html.parser')
-            else:
-                return None
-
-    def get_remy_image(self, query: str, image_type: str = 'jacket') -> str:
-        """
-        Gets an image (or a message about no image) from a RemyWiki song page.
-
-        This is intended to be used for jackets or banners. This searches the
-        song page for "song name's jacket" or "song name's banner" and returns
-        the image connected to that.
-
-        :param query: a string representing something that's supposed to be a
-            song name to find
-        :param image_type: Either "jacket" or "banner", default "jacket"
-        :return: a response fitting for the bot to return, either the requested
-            image or a message describing what it found instead
-        """
-        remy_data = self.search_remy_song(query)
-        if remy_data is not None:
-            images = remy_data.find_all("div", {"class": "thumbinner"})
-            for image in images:
-                if image_type in image.find("div", {"class": "thumbcaption"}).text:
-                    return f"http://remywiki.com{image.find('img')['src']}"
-
-            song_title = remy_data.find("h1", {"id": "firstHeading"}).text
-            if song_title.lower() == query.lower():
-                return f"{song_title} does not have a {image_type}"
-            else:
-                return f"{query} seems to be the song {song_title} but it does not have a {image_type}"
-        else:
-            return f"Could not find a song that looks like: {query}"
-
     @commands.command()
-    async def jacket(self, title: str):
-        response = self.get_remy_image(title, 'jacket')
+    async def jacket(self, *, title: str):
+        """
+        Returns a jacket for a bemani song from remywiki.
+
+        User Arguments:
+            title: the name of a song to search for
+        """
+        response = remy.get_image(title, 'jacket')
         await self.say(response)
 
     @commands.command()
-    async def banner(self, title: str):
-        response = self.get_remy_image(title, 'banner')
+    async def banner(self, *, title: str):
+        """
+        Returns a banner for a bemani song from remywiki.
+
+        User Arguments:
+            title: the name of a song to search for
+        """
+        response = remy.get_image(title, 'banner')
         await self.say(response)
 
 
 if "__main__" in __name__:
+    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    logger.info("Starting Honkbot...")
+
     dotenv.load_dotenv()
     discord_api_key = os.getenv("DISCORD_API_KEY")
     speedrun_api_key = os.getenv("SPEEDRUN_API_KEY")
