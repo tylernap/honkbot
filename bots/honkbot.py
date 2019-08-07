@@ -176,7 +176,7 @@ class Honkbot(commands.Cog):
         await ctx.invoke(self.insult, "ranatalus")
 
     @commands.command()
-    async def record(self, ctx, *, search: str=None):
+    async def record(self, ctx, *, search: str = None):
         """
         Accesses speedrun.com to get world record of given game.
 
@@ -212,7 +212,7 @@ class Honkbot(commands.Cog):
                         game_name = r.json()['data']['names']['international']
                         r = requests.get(
                             "".join([base_url, "games/", game_id, "/categories"]), headers=auth)
-                        game_category = ""
+                        game_category = {}
                         for category in r.json()['data']:
                             if category['name'].startswith('Any%'):
                                 game_category = category
@@ -248,7 +248,7 @@ class Honkbot(commands.Cog):
             await ctx.send("You gotta give me a game to look for...")
 
     @commands.command()
-    async def image(self, ctx, *, search: str=None):
+    async def image(self, ctx, *, search: str = None):
         """
         Returns an image from Google from the given search terms.
 
@@ -261,7 +261,7 @@ class Honkbot(commands.Cog):
             return
 
         if search:
-            query = " ".join(search)
+            query = "".join(search)
             if len(query) < 150:
                 cx_id = "009855409252983983547:3xrcodch8sc"
                 url = (
@@ -293,7 +293,7 @@ class Honkbot(commands.Cog):
             return
 
         if search:
-            query = " ".join(search)
+            query = "".join(search)
             if len(query) < 250:
                 google_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video"
                 search_query = f"&q={query}&key={self.google_api}"
