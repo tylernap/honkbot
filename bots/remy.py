@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from typing import Optional
 import requests
+from discord.ext import commands
 
 
 def search_song(query: str) -> Optional[BeautifulSoup]:
@@ -59,3 +60,28 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
             return f"{query} seems to be the song {song_title} but it does not have a {image_type}"
     else:
         return f"Could not find a song that looks like: {query}"
+
+
+class Remybot(commands.Cog):
+
+    @commands.command()
+    async def jacket(self, ctx, *, title: str):
+        """
+        Returns a jacket for a bemani song from remywiki.
+
+        User Arguments:
+            title: the name of a song to search for
+        """
+        response = get_image(title, 'jacket')
+        await ctx.send(response)
+
+    @commands.command()
+    async def banner(self, ctx, *, title: str):
+        """
+        Returns a banner for a bemani song from remywiki.
+
+        User Arguments:
+            title: the name of a song to search for
+        """
+        response = get_image(title, 'banner')
+        await ctx.send(response)

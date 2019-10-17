@@ -1,44 +1,16 @@
 # Python Standard Library
 import datetime
-import inspect
-import logging
-import os
 import pytz
 import requests
-import sys
 
-# Packages
+# Discord
 import discord
-from discord.errors import Forbidden
 from discord.ext import commands
-import dotenv
-
-# Honkbot
-import remy
+from discord.errors import Forbidden
 
 
-class Honkbot(commands.Bot):
-    """
-    HONK
-
-    A dumbass bot that interfaces with discord to do dumb stuff
-
-    A list of things that it does:
-    * Adds people to groups
-    * Searches google for images
-    * Searches youtube for videos
-    * Insults people
-    * Gives information on eAmuse downtime
-
-    example:
-        import honkbot
-        bot = honkbot.Honkbot(discord_apikey)
-        bot.run()
-    """
-
-    def __init__(self, discord_api, speedrun_api=None, google_api=None):
-        super().__init__(command_prefix='!')
-
+class Honkbot(commands.Cog):
+    def __init__(self, logger, speedrun_api, google_api, bot=None):
         self.eamuse_maintenance = {
             "normal": (
                 datetime.time(hour=20, tzinfo=pytz.utc),
@@ -54,56 +26,40 @@ class Honkbot(commands.Bot):
             ),
         }
 
-        self.discord_api = discord_api
+        self.bot = bot
+        self.logger = logger
         self.speedrun_api = speedrun_api
         self.google_api = google_api
 
         self.lastRecordSearch = ""
 
-        self.add_commands()
-
-    def run(self):
-        super().run(self.discord_api)
-
-    def add_commands(self):
-        """
-        Iterate through all functions this owns, and add them to the bot if they
-        have the @commands.command decorator
-        """
-        members = inspect.getmembers(self)
-        for name, member in members:
-            if isinstance(member, commands.Command):
-                if member.parent is None:
-                    self.add_command(member)
-
+    @commands.Cog.listener()
     async def on_ready(self):
-        logger.info(f"Logged in as {self.user} - {self.user.id}")
+        self.logger.info(f"Logged in as {self.bot.user} - {self.bot.user.id}")
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot:
             return
-        await self.process_commands(message)
-        await self.process_extras(message)
-
-    async def on_command_error(self, error, ctx):
-        if isinstance(error, commands.CommandNotFound):
-            await self.send_message(ctx.message.channel, "Use !help to see a list of commands")
-
-    async def process_extras(self, message):
         if "honk" in message.content.lower():
             if "Skeeter" in message.author.name:
-                await self.send_message(message.channel, "beep")
+                await message.channel.send("beep")
             else:
-                await self.send_message(message.channel, "HONK!")
+                await message.channel.send("HONK!")
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send("Use !help to see a list of commands")
 
     @commands.command()
-    async def test(self):
+    async def test(self, ctx):
         """
         Test if the bot is working
         """
-        await self.say("test")
+        await ctx.send("test")
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def join(self, ctx, *role: str):
         """
         Sets the command invoker to the given role
@@ -118,20 +74,19 @@ class Honkbot(commands.Bot):
         allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
 
         if len(role) != 1:
-            await self.say("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
+            await ctx.send("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
         elif role[0] not in allowed_roles:
-            await self.say("".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
+            await ctx.send("".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
         else:
-            role = discord.utils.get(ctx.message.server.roles, name=role[0])
+            role = discord.utils.get(ctx.message.guild.roles, name=role[0])
             try:
-                user = ctx.message.author
-                if user.roles:
-                    await self.replace_roles(user, role)
+                if ctx.author.roles:
+                    await ctx.author.edit(roles=[role])
                 else:
-                    await self.add_roles(user, role)
-                await self.say("Adding {0} to {1}".format(user.display_name, role))
+                    await ctx.author.add_roles(role)
+                await ctx.send(f"Adding {ctx.author.display_name} to {role}")
             except Forbidden:
-                await self.say("I do not have permissions to assign roles right now. Sorry!")
+                await ctx.send("I do not have permissions to assign roles right now. Sorry!")
 
     def get_display_time(self, timing_type):
         """
@@ -180,7 +135,7 @@ class Honkbot(commands.Bot):
         return False
 
     @commands.command()
-    async def eamuse(self):
+    async def eamuse(self, ctx):
         """
         Gets eAmusement maintenance time.
 
@@ -195,11 +150,11 @@ class Honkbot(commands.Bot):
             ddr_message = ":white_check_mark: - no maintenance today"
             other_message = self.get_display_time("normal")
 
-        await self.say(f"DDR: {ddr_message}")
-        await self.say(f"Other: {other_message}")
+        await ctx.send(f"DDR: {ddr_message}")
+        await ctx.send(f"Other: {other_message}")
 
     @commands.command()
-    async def insult(self, *name: str):
+    async def insult(self, ctx, *name: str):
         """
         Returns a scathing insult about the given name.
 
@@ -207,21 +162,21 @@ class Honkbot(commands.Bot):
             name: name of person to insult
         """
         if len(name) < 1:
-            await self.say("No one to insult :(")
+            await ctx.send("No one to insult :(")
         else:
             r = requests.get("http://quandyfactory.com/insult/json")
             insult = r.json()["insult"]
-            await self.say(insult.replace("Thou art", f"{' '.join(name)} is"))
+            await ctx.send(insult.replace("Thou art", f"{' '.join(name)} is"))
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def ranatalus(self, ctx):
         """
         Returns a scathing insult about this particular name.
         """
-        await ctx.invoke(self.get_command("insult"), "ranatalus")
+        await ctx.invoke(self.insult, "ranatalus")
 
     @commands.command()
-    async def record(self, *, search: str=None):
+    async def record(self, ctx, *, search: str = None):
         """
         Accesses speedrun.com to get world record of given game.
 
@@ -230,7 +185,7 @@ class Honkbot(commands.Bot):
         """
 
         if not self.speedrun_api:
-            await self.say("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
             return
 
         if search:
@@ -257,7 +212,7 @@ class Honkbot(commands.Bot):
                         game_name = r.json()['data']['names']['international']
                         r = requests.get(
                             "".join([base_url, "games/", game_id, "/categories"]), headers=auth)
-                        game_category = ""
+                        game_category = {}
                         for category in r.json()['data']:
                             if category['name'].startswith('Any%'):
                                 game_category = category
@@ -274,26 +229,26 @@ class Honkbot(commands.Bot):
                             r = requests.get("".join([base_url, "users/", user_id]), headers=auth)
                             user_name = r.json()['data']['names']['international']
 
-                            await self.say(f"The Any% record for {game_name} is {record} by {user_name}")
+                            await ctx.send(f"The Any% record for {game_name} is {record} by {user_name}")
 
                         else:
-                            await self.say("There are no Any% records for {}".format(game_name))
+                            await ctx.send("There are no Any% records for {}".format(game_name))
                     elif len(results) < 5:
                         names = []
                         for result in results:
                             names.append(result['names']['international'])
-                        await self.say("Multiple results. Do a search for the following: {}".format(", ".join(names)))
-                        await self.say("If you want the first result, redo the search")
+                        await ctx.send("Multiple results. Do a search for the following: {}".format(", ".join(names)))
+                        await ctx.send("If you want the first result, redo the search")
                     else:
-                        await self.say("Too many results! Be a little more specific")
+                        await ctx.send("Too many results! Be a little more specific")
                 else:
-                    await self.say("No games with that name found!")
+                    await ctx.send("No games with that name found!")
             self.lastRecordSearch = search
         else:
-            await self.say("You gotta give me a game to look for...")
+            await ctx.send("You gotta give me a game to look for...")
 
     @commands.command()
-    async def image(self, *, search: str=None):
+    async def image(self, ctx, *, search: str = None):
         """
         Returns an image from Google from the given search terms.
 
@@ -302,11 +257,11 @@ class Honkbot(commands.Bot):
         """
 
         if not self.google_api:
-            await self.say("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
             return
 
         if search:
-            query = " ".join(search)
+            query = "".join(search)
             if len(query) < 150:
                 cx_id = "009855409252983983547:3xrcodch8sc"
                 url = (
@@ -316,16 +271,16 @@ class Honkbot(commands.Bot):
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
-                    await self.say(response)
+                    await ctx.send(response)
                 except KeyError:
-                    await self.say(f"No results found for {query} :(")
+                    await ctx.send(f"No results found for {query} :(")
             else:
-                await self.say("Query too big!")
+                await ctx.send("Query too big!")
         else:
-            await self.say("Usage: !image <search term>")
+            await ctx.send("Usage: !image <search term>")
 
     @commands.command()
-    async def youtube(self, *, search: str=None):
+    async def youtube(self, ctx, *, search: str = None):
         """
         Returns a video from YouTube from the given search terms
 
@@ -334,11 +289,11 @@ class Honkbot(commands.Bot):
         """
 
         if not self.google_api:
-            await self.say("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
             return
 
         if search:
-            query = " ".join(search)
+            query = "".join(search)
             if len(query) < 250:
                 google_url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video"
                 search_query = f"&q={query}&key={self.google_api}"
@@ -346,51 +301,14 @@ class Honkbot(commands.Bot):
                 try:
                     response = r.json()["items"][0]["id"]["videoId"]
                 except IndexError:
-                    await self.say(f"Could not find any videos with search {query}")
+                    await ctx.send(f"Could not find any videos with search {query}")
                     return
 
                 if response:
-                    await self.say(f"https://youtu.be/{response}")
+                    await ctx.send(f"https://youtu.be/{response}")
                 else:
-                    await self.say(f"Could not find any videos with search {query}")
+                    await ctx.send(f"Could not find any videos with search {query}")
             else:
-                await self.say("Query too long!")
+                await ctx.send("Query too long!")
         else:
-            await self.say("Usage: !youtube <search terms>")
-
-    @commands.command()
-    async def jacket(self, *, title: str):
-        """
-        Returns a jacket for a bemani song from remywiki.
-
-        User Arguments:
-            title: the name of a song to search for
-        """
-        response = remy.get_image(title, 'jacket')
-        await self.say(response)
-
-    @commands.command()
-    async def banner(self, *, title: str):
-        """
-        Returns a banner for a bemani song from remywiki.
-
-        User Arguments:
-            title: the name of a song to search for
-        """
-        response = remy.get_image(title, 'banner')
-        await self.say(response)
-
-
-if "__main__" in __name__:
-    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    logger.info("Starting Honkbot...")
-
-    dotenv.load_dotenv()
-    discord_api_key = os.getenv("DISCORD_API_KEY")
-    speedrun_api_key = os.getenv("SPEEDRUN_API_KEY")
-    google_api_key = os.getenv("GOOGLE_API_KEY")
-
-    bot = Honkbot(discord_api_key, speedrun_api_key, google_api_key)
-    bot.run()
+            await ctx.send("Usage: !youtube <search terms>")
