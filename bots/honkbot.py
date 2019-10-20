@@ -71,7 +71,7 @@ class Honkbot(commands.Cog):
             role: OH, MI, KY, PA, IN, NY, or Canada
         """
 
-        allowed_roles = ['OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
+        allowed_roles = ['CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
 
         if len(role) != 1:
             await ctx.send("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
