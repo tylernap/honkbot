@@ -98,16 +98,16 @@ class Honkbot(commands.Cog):
             role: CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, Canada
         """
         if len(role) != 1:
-            return await ctx.send("Usage: !leave [" + ", ".join(self.custom_roles) + "]")  # This works
+            return await ctx.send("Usage: !leave [" + ", ".join(self.custom_roles) + "]")
         elif role[0] not in self.custom_roles:
-            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))  # This works
+            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
         try:
             role = discord.utils.get(ctx.guild.roles, name=role[0])
             if role in ctx.author.roles:
                 await ctx.author.remove_roles(role)
                 return await ctx.send(f"Removing {ctx.author.display_name} from {role}")
             else:
-                return await ctx.send(f"{ctx.author.display_name} is not in {role}")  # This works
+                return await ctx.send(f"{ctx.author.display_name} is not in {role}")
         except Forbidden:
             await ctx.send("I do not have permissions to assign roles right now. Sorry!")
 
