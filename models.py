@@ -1,16 +1,45 @@
+import os
+
+import dotenv
 import psycopg2
 
 
 class DatabaseModel:
     def __init__(self, table=None):
+        
+        dotenv.load_dotenv()
+        password = os.getenv("POSTGRES_PASSWORD")
+        user = os.getenv("POSTGRES_USER")
+        host = os.getenv("POSTGRES_HOST")
+        port = os.getenv("POSTGRES_PORT")
+        self.name = ""
+        self.code = ""
         self.table = table
-        self.conn = psycopg2.connect(
+        self._conn = psycopg2.connect(
             dbname="honkbot",
-            user="honkbot",
+            user=user,
             password=password,
-            host=host
+            host=f"{host}:{port}"
         )
-        self.cursor = self.conn.cursor()
+        self._cursor = self.conn.cursor()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+
+        self._cursor.close()
+        self._conn.close()
+
+    def __del__(self):
+
+        self._cursor.close()
+        self._conn.close()
+
+    def _create_entry(self, table, user_id, name, code):
+
+        self._cursor.execute(
+            f"INSERT INTO {table} (user_id, name, code) VALUES (%s, %s, %s);",
+            (user_id, name, code)
+        )
+        self._conn.commit()
 
 class DDRCode(DatabaseModel):
     def __init__(self, user_id=None):
@@ -18,8 +47,14 @@ class DDRCode(DatabaseModel):
         table = "ddr_codes"
         super().__init__(table)
 
-    def create(self, name=None, ddr_code=None):
-        pass
+    def create(self, name=None, code=None):
+        if not name:
+            raise Exception("An 8 character dancer name is required when creating a new entry")
+        if not code:
+            raise Exception("A DDR code (####-####) is required when creating a new entry")
+
+        self._create_entry(self.table, self.user_id, name, code)
+
     def update(self, **kwargs):
         pass
     def delete(self):
