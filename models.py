@@ -1,3 +1,7 @@
+"""
+Honkbot database models
+"""
+
 import os
 
 import dotenv
@@ -5,8 +9,21 @@ import psycopg2
 
 
 class CodeDatabaseModel:
+    """
+    Base model inherited to interact with the different tables in the database
+
+    Args:
+        table (str): Name of the database table to interact with
+
+    """
     def __init__(self, table=None):
-        
+
+        self.AVAILABLE_ATTRIBUTES = [
+            "name",
+            "code",
+            "rank"
+        ]
+
         dotenv.load_dotenv()
         password = os.getenv("POSTGRES_PASSWORD")
         user = os.getenv("POSTGRES_USER")
@@ -14,14 +31,16 @@ class CodeDatabaseModel:
         port = os.getenv("POSTGRES_PORT")
         self.name = ""
         self.code = ""
+        self.rank = ""
         self.table = table
         self._conn = psycopg2.connect(
             dbname="honkbot",
             user=user,
             password=password,
-            host=f"{host}:{port}"
+            host=host,
+            port=port
         )
-        self._cursor = self.conn.cursor()
+        self._cursor = self._conn.cursor()
 
     def __enter__(self):
         return self
@@ -30,13 +49,19 @@ class CodeDatabaseModel:
 
         self._cursor.close()
         self._conn.close()
-        return True if exc_type is None else False
+        return bool(exc_type is None)
 
-    def _create_entry(self, table, user_id, name, code):
+    def _create_entry(self, table, user_id, **kwargs):
 
+        name = kwargs.get("name")
+        code = kwargs.get("code")
+        rank = kwargs.get("rank")
+
+        if not name or not code:
+            raise Exception("Name and code are required attributes")
         self._cursor.execute(
-            "INSERT INTO %s (user_id, name, code) VALUES (%s, %s, %s);",
-            (table, user_id, name, code)
+            "INSERT INTO %s (user_id, name, code, rank) VALUES (%s, %s, %s, %s);",
+            (table, user_id, name, code, rank)
         )
         self._conn.commit()
 
@@ -78,34 +103,145 @@ class CodeDatabaseModel:
         )
         self._conn.commit()
 
+
 class DDRCode(CodeDatabaseModel):
+    """
+    Object representing a DDR Dancer
+
+    Args:
+        user_id (str): Discord User ID to reference
+    """
     def __init__(self, user_id=None):
         self.user_id = user_id
-        table = "ddr_codes"
-        super().__init__(table)
+        super().__init__("ddr_codes")
 
-    def create(self, name=None, code=None):
+    def create(self, name=None, code=None, rank=None):
+        """
+        Creates a DDR Dancer in the database
+
+        Args:
+            name (str): 8 character dancer name submitted to eAmuse
+            code (str): 9 character dancer ID (####-####)
+
+        Optional:
+            rank (str): Dan ranking of user
+
+        Returns:
+            None
+        """
         if not name:
             raise Exception("An 8 character dancer name is required when creating a new entry")
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
 
-        self._create_entry(self.table, self.user_id, name, code)
+        self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
 
-    def update(self, user_id, **kwargs):
-        pass
+    def update(self, **kwargs):
+        """
+        Updates a DDR dancer in the database
+
+        Args:
+            **kwargs: The data to be updated
+
+        Options:
+            name (str): 8 character dancer name submitted to eAmuse
+            code (str): 9 character dancer ID (####-####)
+            rank (str): Dan ranking of user
+
+        Returns:
+            None
+        """
+
+        # If there's nothing to update...well there's nothing to update
+        if not kwargs.items():
+            return
+        for key, _ in kwargs.items():
+            # If something is inputted that shouldn't be, raise
+            if key not in self.AVAILABLE_ATTRIBUTES:
+                raise Exception(f'"{key}" is not a valid attribute to update')
+
+        self._update_entry(self.table, self.user_id, **kwargs)
+
     def delete(self):
-        pass
+        """
+        Deletes a DDR dancer from the database
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        self._delete_entry(self.table, self.user_id)
+
 
 class IIDXCode(CodeDatabaseModel):
+    """
+    Object representing a IIDX player
+
+    Args:
+        user_id (str): Discord User ID to reference
+    """
     def __init__(self, user_id=None):
         self.user_id = user_id
         table = "iidx_codes"
         super().__init__(table)
 
-    def create(self, name=None, iidx_id=None):
-        pass
+    def create(self, name=None, iidx_id=None, rank=None):
+        """
+        Creates a IIDX player in the database
+
+        Args:
+            name (str): DJ Name of the player
+            iidx_id (str): ID of the IIDX player
+        Optional:
+            rank (str): Dan ranking of the player
+
+        Returns:
+            None
+        """
+        if not name:
+            raise Exception("A DJ name is required when creating a new entry")
+        if not iidx_id:
+            raise Exception("A IIDX ID is required when creating a new entry")
+
+        self._create_entry(self.table, self.user_id, name=name, code=iidx_id, rank=rank)
+
     def update(self, **kwargs):
-        pass
+        """
+        Updates a IIDX player in the database
+
+        Args:
+            kwargs (dict): Data to be updated
+        Options:
+            name (str): DJ name of the player
+            code (str): IIDX ID of the player
+            rank (str): Dan ranking of the player
+
+        Returns:
+            None
+        """
+
+        # If there's nothing to update...well there's nothing to update
+        if not kwargs.items():
+            return
+        for key, _ in kwargs.items():
+            # If something is inputted that shouldn't be, raise
+            if key not in self.AVAILABLE_ATTRIBUTES:
+                raise Exception(f'"{key}" is not a valid attribute to update')
+
+        self._update_entry(self.table, self.user_id, **kwargs)
+
     def delete(self):
-        pass
+        """
+        Deletes a player from the database
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+
+        self._delete_entry(self.table, self.user_id)
