@@ -40,20 +40,16 @@ class CodeDatabaseModel:
         ]
 
         dotenv.load_dotenv()
-        password = os.getenv("POSTGRES_PASSWORD")
-        user = os.getenv("POSTGRES_USER")
-        host = os.getenv("POSTGRES_HOST")
-        port = os.getenv("POSTGRES_PORT")
         self.name = ""
         self.code = ""
         self.rank = ""
         self.table = table
         self._conn = psycopg2.connect(
             dbname="honkbot",
-            user=user,
-            password=password,
-            host=host,
-            port=port
+            user=os.getenv("POSTGRES_USER"),
+            password=os.getenv("POSTGRES_PASSWORD"),
+            host=os.getenv("POSTGRES_HOST"),
+            port=os.getenv("POSTGRES_PORT")
         )
         self._cursor = self._conn.cursor()
 
