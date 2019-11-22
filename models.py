@@ -4,7 +4,7 @@ import dotenv
 import psycopg2
 
 
-class DatabaseModel:
+class CodeDatabaseModel:
     def __init__(self, table=None):
         
         dotenv.load_dotenv()
@@ -23,25 +23,62 @@ class DatabaseModel:
         )
         self._cursor = self.conn.cursor()
 
+    def __enter__(self):
+        return self
+
     def __exit__(self, exc_type, exc_value, traceback):
 
         self._cursor.close()
         self._conn.close()
-
-    def __del__(self):
-
-        self._cursor.close()
-        self._conn.close()
+        return True if exc_type is None else False
 
     def _create_entry(self, table, user_id, name, code):
 
         self._cursor.execute(
-            f"INSERT INTO {table} (user_id, name, code) VALUES (%s, %s, %s);",
-            (user_id, name, code)
+            "INSERT INTO %s (user_id, name, code) VALUES (%s, %s, %s);",
+            (table, user_id, name, code)
         )
         self._conn.commit()
 
-class DDRCode(DatabaseModel):
+    def _get_entry(self, table, user_id):
+
+        self._cursor.execute(
+            'SELECT * from %s WHERE user_id="%s";',
+            (table, user_id)
+        )
+        return self._cursor.fetchone()
+
+    def _list_entries(self, table):
+
+        self._cursor.execute("SELECT * FROM %s", (table,))
+        return self._cursor.fetchall()
+
+    def _update_entry(self, table, user_id, **kwargs):
+
+        entry = self._get_entry(table, user_id)
+        if not entry:
+            raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
+
+        set_values = ", ".join([f"{item[0]}={item[1]}" for item in list(kwargs.items())])
+        self._cursor.execute(
+            'UPDATE %s SET %s WHERE user_id="%s";',
+            (table, set_values, user_id)
+        )
+        self._conn.commit()
+
+    def _delete_entry(self, table, user_id):
+
+        entry = self._get_entry(table, user_id)
+        if not entry:
+            raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
+
+        self._cursor.execute(
+            'DELETE FROM %s WHERE user_id="%s";',
+            (table, user_id)
+        )
+        self._conn.commit()
+
+class DDRCode(CodeDatabaseModel):
     def __init__(self, user_id=None):
         self.user_id = user_id
         table = "ddr_codes"
@@ -55,12 +92,12 @@ class DDRCode(DatabaseModel):
 
         self._create_entry(self.table, self.user_id, name, code)
 
-    def update(self, **kwargs):
+    def update(self, user_id, **kwargs):
         pass
     def delete(self):
         pass
 
-class IIDXCode(DatabaseModel):
+class IIDXCode(CodeDatabaseModel):
     def __init__(self, user_id=None):
         self.user_id = user_id
         table = "iidx_codes"
