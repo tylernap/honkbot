@@ -1,5 +1,20 @@
 """
 Honkbot database models
+
+This module is used to interact with a PostgreSQL database. It assumes the database is to look like this:
+
+DB: honkbot
+  Table: ddr_codes
+    user_id: PRIMARY VARCHAR(100)
+    name: VARCHAR(8) NOT NULL (ie. MEATBEAN)
+    code: VARCHAR(9) NOT NULL (ie. 1234-5678)
+    rank: VARCHAR(5) (ie. 10dan, 2kyu, chuu, kai)
+  Table: iidx_codes
+    user_id: PRIMARY VARCHAR(100)
+    name: VARCHAR(6) NOT NULL (ie. SPOOKY)
+    code: VARCHAR(9) NOT NULL (ie. 1234-5678)
+    rank: VARCHAR(5) (ie. 10dan, 2kyu, chuu, kai)
+
 """
 
 import os
@@ -201,8 +216,8 @@ class IIDXCode(CodeDatabaseModel):
         Returns:
             None
         """
-        if not name:
-            raise Exception("A DJ name is required when creating a new entry")
+        if not name or len(name) > 6:
+            raise Exception("A 6 character DJ name is required when creating a new entry")
         if not iidx_id:
             raise Exception("A IIDX ID is required when creating a new entry")
 
