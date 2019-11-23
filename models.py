@@ -1,7 +1,18 @@
 """
 Honkbot database models
 
-This module is used to interact with a PostgreSQL database. It assumes the database is to look like this:
+This module is used to interact with a PostgreSQL database.
+
+Usage:
+    import models
+    user = models.DDRCode("MyDiscordID")
+    print(user.name) # Returns the stored name of the user
+    user.create(name="TEST", code="1234-5678", rank="9dan")
+    user.update(code="8888-8888")
+    user.update(name="TESTING", rank="10dan")
+    user.delete()
+
+It assumes the database is to look like this:
 
 DB: honkbot
   Table: ddr_codes
@@ -93,6 +104,14 @@ class CodeDatabaseModel:
         self._cursor.execute(f"SELECT * FROM {table}")
         return self._cursor.fetchall()
 
+    def _search_entries(self, table, **filters):
+
+        search_string = " AND ".join(f"{item[0]} = '{item[1]}'" for item in list(filters.items())])
+        self._cursor.execute(f"SELECT * from {table} WHERE {search_string};")
+        response = self._cursor.fetchall()
+
+        return response
+
     def _update_entry(self, table, user_id, **kwargs):
 
         entry = self._get_entry(table, user_id)
@@ -154,6 +173,32 @@ class DDRCode(CodeDatabaseModel):
 
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
+
+    def search(self, **filters):
+        """
+        Searches database for given filters
+
+        Args:
+            **filters: Data to filter on
+
+        Options:
+            name (str): 8 character dancer name submitted to eAmuse
+            code (str): 9 character dancer ID (####-####)
+            rank (str): Dan ranking of user
+
+        Returns:
+            List: Entries matching given filters
+        """
+
+        if not filters.items():
+            return []
+
+        # Validate search filters
+        for key, _ in kwargs.items():
+            if key not in self.AVAILABLE_ATTRIBUTES:
+                raise Exception(f'"{key}" is not a valid attribute to search for')
+
+        return self._search_entries(self.table, **filters)
 
     def update(self, **kwargs):
         """
