@@ -256,13 +256,13 @@ class IIDXCode(CodeDatabaseModel):
 
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
-    def create(self, name=None, iidx_id=None, rank=None):
+    def create(self, name=None, code=None, rank=None):
         """
         Creates a IIDX player in the database
 
         Args:
             name (str): DJ Name of the player
-            iidx_id (str): ID of the IIDX player
+            code (str): IIDX ID of the player
         Optional:
             rank (str): Dan ranking of the player
 
@@ -273,10 +273,10 @@ class IIDXCode(CodeDatabaseModel):
             raise Exception(
                 "A DJ name with at most 6 characters is required when creating a new entry"
             )
-        if not iidx_id:
+        if not code:
             raise Exception("A IIDX ID is required when creating a new entry")
 
-        self._create_entry(self.table, self.user_id, name=name, code=iidx_id, rank=rank)
+        self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def search(self, **filters):
