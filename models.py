@@ -279,6 +279,30 @@ class IIDXCode(CodeDatabaseModel):
         self._create_entry(self.table, self.user_id, name=name, code=iidx_id, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
+    def search(self, **filters):
+        """
+        Searches database for given filters
+
+        Args:
+            **filters: Data to filter on
+
+        Options:
+            name (str): 6 character dancer name submitted to eAmuse
+            code (str): 9 character IIDX ID (####-####)
+            rank (str): Dan ranking of user
+
+        Returns:
+            List: Entries matching given filters
+        """
+
+        if not filters.items():
+            return []
+
+        # Validate search filters
+        for key, _ in filters.items():
+            if key not in self.AVAILABLE_ATTRIBUTES:
+                raise Exception(f'"{key}" is not a valid attribute to search for')
+
     def update(self, **kwargs):
         """
         Updates a IIDX player in the database
