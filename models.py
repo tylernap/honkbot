@@ -82,7 +82,11 @@ class CodeDatabaseModel:
             'SELECT * from %s WHERE user_id="%s";',
             (table, user_id)
         )
-        return self._cursor.fetchone()
+        entry = self._cursor.fetchone()
+        if entry:
+            return entry
+        else:
+            return (user_id, None, None, None)
 
     def _list_entries(self, table):
 
@@ -125,6 +129,7 @@ class DDRCode(CodeDatabaseModel):
     def __init__(self, user_id=None):
         self.user_id = user_id
         super().__init__("ddr_codes")
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def create(self, name=None, code=None, rank=None):
         """
@@ -140,8 +145,10 @@ class DDRCode(CodeDatabaseModel):
         Returns:
             None
         """
-        if not name:
-            raise Exception("An 8 character dancer name is required when creating a new entry")
+        if not name or len(name) > 8:
+            raise Exception(
+                "An dancer name with at most 8 charactersis required when creating a new entry"
+            )
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
 
@@ -196,8 +203,9 @@ class IIDXCode(CodeDatabaseModel):
     """
     def __init__(self, user_id=None):
         self.user_id = user_id
-        table = "iidx_codes"
-        super().__init__(table)
+        super().__init__("iidx_codes")
+
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def create(self, name=None, iidx_id=None, rank=None):
         """
@@ -213,7 +221,9 @@ class IIDXCode(CodeDatabaseModel):
             None
         """
         if not name or len(name) > 6:
-            raise Exception("A 6 character DJ name is required when creating a new entry")
+            raise Exception(
+                "A DJ name with at most 6 characters is required when creating a new entry"
+            )
         if not iidx_id:
             raise Exception("A IIDX ID is required when creating a new entry")
 
