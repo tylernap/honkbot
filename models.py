@@ -194,7 +194,7 @@ class DDRCode(CodeDatabaseModel):
             return []
 
         # Validate search filters
-        for key, _ in kwargs.items():
+        for key, _ in filters.items():
             if key not in self.AVAILABLE_ATTRIBUTES:
                 raise Exception(f'"{key}" is not a valid attribute to search for')
 
