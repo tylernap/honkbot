@@ -303,6 +303,8 @@ class IIDXCode(CodeDatabaseModel):
             if key not in self.AVAILABLE_ATTRIBUTES:
                 raise Exception(f'"{key}" is not a valid attribute to search for')
 
+        return self._search_entries(self.table, **filters)
+
     def update(self, **kwargs):
         """
         Updates a IIDX player in the database
