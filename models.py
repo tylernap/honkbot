@@ -40,9 +40,9 @@ class CodeDatabaseModel:
         ]
 
         dotenv.load_dotenv()
-        self.name = ""
-        self.code = ""
-        self.rank = ""
+        self.name = None
+        self.code = None
+        self.rank = None
         self.table = table
         self._conn = psycopg2.connect(
             dbname="honkbot",
@@ -153,6 +153,7 @@ class DDRCode(CodeDatabaseModel):
             raise Exception("A DDR code (####-####) is required when creating a new entry")
 
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def update(self, **kwargs):
         """
@@ -179,6 +180,7 @@ class DDRCode(CodeDatabaseModel):
                 raise Exception(f'"{key}" is not a valid attribute to update')
 
         self._update_entry(self.table, self.user_id, **kwargs)
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def delete(self):
         """
@@ -192,7 +194,9 @@ class DDRCode(CodeDatabaseModel):
         """
 
         self._delete_entry(self.table, self.user_id)
-
+        self.name = None
+        self.code = None
+        self.rank = None
 
 class IIDXCode(CodeDatabaseModel):
     """
@@ -228,6 +232,7 @@ class IIDXCode(CodeDatabaseModel):
             raise Exception("A IIDX ID is required when creating a new entry")
 
         self._create_entry(self.table, self.user_id, name=name, code=iidx_id, rank=rank)
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def update(self, **kwargs):
         """
@@ -253,6 +258,7 @@ class IIDXCode(CodeDatabaseModel):
                 raise Exception(f'"{key}" is not a valid attribute to update')
 
         self._update_entry(self.table, self.user_id, **kwargs)
+        _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
     def delete(self):
         """
@@ -266,3 +272,6 @@ class IIDXCode(CodeDatabaseModel):
         """
 
         self._delete_entry(self.table, self.user_id)
+        self.name = None
+        self.code = None
+        self.rank = None
