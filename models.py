@@ -71,16 +71,16 @@ class CodeDatabaseModel:
         if not name or not code:
             raise Exception("Name and code are required attributes")
         self._cursor.execute(
-            "INSERT INTO %s (user_id, name, code, rank) VALUES (%s, %s, %s, %s);",
-            (table, user_id, name, code, rank)
+            f"INSERT INTO {table} (user_id, name, code, rank) VALUES (%s, %s, %s, %s);",
+            (user_id, name, code, rank)
         )
         self._conn.commit()
 
     def _get_entry(self, table, user_id):
 
         self._cursor.execute(
-            'SELECT * from %s WHERE user_id="%s";',
-            (table, user_id)
+            f'SELECT * from {table} WHERE user_id=%s;',
+            (user_id,)
         )
         entry = self._cursor.fetchone()
         if entry:
@@ -90,7 +90,7 @@ class CodeDatabaseModel:
 
     def _list_entries(self, table):
 
-        self._cursor.execute("SELECT * FROM %s", (table,))
+        self._cursor.execute(f"SELECT * FROM {table}")
         return self._cursor.fetchall()
 
     def _update_entry(self, table, user_id, **kwargs):
@@ -101,8 +101,8 @@ class CodeDatabaseModel:
 
         set_values = ", ".join([f"{item[0]}={item[1]}" for item in list(kwargs.items())])
         self._cursor.execute(
-            'UPDATE %s SET %s WHERE user_id="%s";',
-            (table, set_values, user_id)
+            f'UPDATE {table} SET {set_values} WHERE user_id=%s;',
+            (user_id,)
         )
         self._conn.commit()
 
@@ -113,8 +113,8 @@ class CodeDatabaseModel:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
         self._cursor.execute(
-            'DELETE FROM %s WHERE user_id="%s";',
-            (table, user_id)
+            'DELETE FROM {table} WHERE user_id=%s;',
+            (user_id,)
         )
         self._conn.commit()
 
