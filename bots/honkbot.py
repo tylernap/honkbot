@@ -51,6 +51,7 @@ class Honkbot(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        self.logger.error(error)
         if isinstance(error, commands.CommandNotFound):
             await ctx.send("Use !help to see a list of commands")
 

@@ -2,7 +2,6 @@ import re
 
 import discord
 from discord.ext import commands
-from discord.error import Forbidden
 
 from .. import models
 
@@ -68,6 +67,8 @@ class EamuseRivals(commands.Cog):
             try:
                 ddrcode.create(name=name, code=code, rank=rank)
             except Exception as e:
+                if "An entry already exists" in str(e):
+                    return await ctx.send(str(e))
                 await ctx.send(f"Cannot create entry for {name}! Send help!")
                 raise e
 
@@ -92,10 +93,17 @@ class EamuseRivals(commands.Cog):
                 filters[arg_filter[0]] = arg_filter[1]
             # Search!
             try:
-                ddrcode.search(**filters)
+                response = ddrcode.search(**filters)
             except Exception as e:
                 await ctx.send("Cannot search for rivals! Send help!")
                 raise e
+
+            if not response:
+                return await ctx.send("No rivals found with that filter!")
+            response_text = "\n".join(
+                [f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response]
+            )
+            return await ctx.send(f"```\n{response_text}\n```")
 
         elif action == "update":
             # Need to have some filters
@@ -125,6 +133,7 @@ class EamuseRivals(commands.Cog):
                 else:
                     await ctx.send("Cannot update entry! Send help!")
                     raise e
+            return await ctx.send("Entry has been updated!")
 
         elif action == "delete":
             try:
@@ -137,6 +146,7 @@ class EamuseRivals(commands.Cog):
                 else:
                     await ctx.send("Cannot delete entry! Send help!")
                     raise e
+            return await ctx.send("Entry has been deleted!")
 
     @commands.command()
     async def iidxrival(self, ctx, action=None, *args):
@@ -197,6 +207,8 @@ class EamuseRivals(commands.Cog):
             try:
                 iidxcode.create(name=name, code=code, rank=rank)
             except Exception as e:
+                if "An entry already exists" in str(e):
+                    return await ctx.send(str(e))
                 await ctx.send(f"Cannot create entry for {name}! Send help!")
                 raise e
 
@@ -219,10 +231,17 @@ class EamuseRivals(commands.Cog):
                 filters[arg_filter[0]] = arg_filter[1]
 
             try:
-                iidxcode.search(**filters)
+                response = iidxcode.search(**filters)
             except Exception as e:
                 await ctx.send("Cannot search for rivals! Send help!")
                 raise e
+            if not response:
+                return await ctx.send("No rivals found with that filter!")
+            response_text = "\n".join(
+                [f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response]
+            )
+            return await ctx.send(f"```\n{response_text}\n```")
+
         elif action == "update":
             if not args:
                 return await ctx.send("Missing filters! Use `!help iidxrival` for more information")
@@ -248,6 +267,7 @@ class EamuseRivals(commands.Cog):
                 else:
                     await ctx.send("Cannot update entry! Send help!")
                     raise e
+            return await ctx.send("Entry has been updated!")
 
         elif action == "delete":
             try:
@@ -260,3 +280,4 @@ class EamuseRivals(commands.Cog):
                 else:
                     await ctx.send("Cannot delete entry! Send help!")
                     raise e
+            return await ctx.send("Entry has been deleted!")

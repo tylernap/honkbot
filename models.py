@@ -132,7 +132,7 @@ class CodeDatabaseModel:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
         self._cursor.execute(
-            'DELETE FROM {table} WHERE user_id=%s;',
+            f'DELETE FROM {table} WHERE user_id=%s;',
             (user_id,)
         )
         self._conn.commit()
@@ -166,11 +166,14 @@ class DDRCode(CodeDatabaseModel):
         """
         if not name or len(name) > 8:
             raise Exception(
-                "A dancer name with at most 8 charactersis required when creating a new entry"
+                "A dancer name with at most 8 characters is required when creating a new entry"
             )
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
-
+        
+        entry = self._get_entry(table, user_id)
+        if entry:
+            raise Exception("An entry already exists for user")
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
 
