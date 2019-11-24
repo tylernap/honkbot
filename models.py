@@ -118,7 +118,7 @@ class CodeDatabaseModel:
         if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
-        set_values = ", ".join([f"{item[0]} = '{item[1]}'" for item in list(kwargs.items())])
+        set_values = ", ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(kwargs.items())])
         self._cursor.execute(
             f'UPDATE {table} SET {set_values} WHERE user_id=%s;',
             (user_id,)
