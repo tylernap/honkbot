@@ -3,7 +3,7 @@ import re
 import discord
 from discord.ext import commands
 
-from .. import models
+import models
 
 
 class EamuseRivals(commands.Cog):
