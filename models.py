@@ -115,7 +115,7 @@ class CodeDatabaseModel:
     def _update_entry(self, table, user_id, **kwargs):
 
         entry = self._get_entry(table, user_id)
-        if not entry:
+        if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
         set_values = ", ".join([f"{item[0]} = '{item[1]}'" for item in list(kwargs.items())])
@@ -128,7 +128,7 @@ class CodeDatabaseModel:
     def _delete_entry(self, table, user_id):
 
         entry = self._get_entry(table, user_id)
-        if not entry:
+        if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
         self._cursor.execute(
@@ -172,7 +172,7 @@ class DDRCode(CodeDatabaseModel):
             raise Exception("A DDR code (####-####) is required when creating a new entry")
 
         entry = self._get_entry(self.table, self.user_id)
-        if entry:
+        if entry[1]:
             raise Exception("An entry already exists for user")
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
@@ -280,7 +280,7 @@ class IIDXCode(CodeDatabaseModel):
             raise Exception("A IIDX ID is required when creating a new entry")
 
         entry = self._get_entry(self.table, self.user_id)
-        if entry:
+        if entry[1]:
             raise Exception("An entry already exists for user")
 
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
