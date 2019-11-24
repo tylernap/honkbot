@@ -106,7 +106,7 @@ class CodeDatabaseModel:
 
     def _search_entries(self, table, **filters):
 
-        search_string = " AND ".join([f"{item[0]} = '{item[1]}'" for item in list(filters.items())])
+        search_string = " AND ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(filters.items())])
         self._cursor.execute(f"SELECT * from {table} WHERE {search_string};")
         response = self._cursor.fetchall()
 
