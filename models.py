@@ -166,7 +166,7 @@ class DDRCode(CodeDatabaseModel):
         """
         if not name or len(name) > 8:
             raise Exception(
-                "An dancer name with at most 8 charactersis required when creating a new entry"
+                "A dancer name with at most 8 charactersis required when creating a new entry"
             )
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
