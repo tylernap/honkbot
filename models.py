@@ -170,8 +170,8 @@ class DDRCode(CodeDatabaseModel):
             )
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
-        
-        entry = self._get_entry(table, user_id)
+
+        entry = self._get_entry(self.table, self.user_id)
         if entry:
             raise Exception("An entry already exists for user")
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
@@ -278,6 +278,10 @@ class IIDXCode(CodeDatabaseModel):
             )
         if not code:
             raise Exception("A IIDX ID is required when creating a new entry")
+
+        entry = self._get_entry(self.table, self.user_id)
+        if entry:
+            raise Exception("An entry already exists for user")
 
         self._create_entry(self.table, self.user_id, name=name, code=code, rank=rank)
         _, self.name, self.code, self.rank = self._get_entry(self.table, self.user_id)
