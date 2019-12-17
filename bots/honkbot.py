@@ -26,7 +26,7 @@ class Honkbot(commands.Cog):
             ),
         }
 
-        self.custom_roles = ['CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
+        self.custom_roles = ['AKR', 'CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
 
         self.bot = bot
         self.logger = logger
