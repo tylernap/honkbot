@@ -71,6 +71,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
+            role: CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, CA, Canada
         """
         if len(role) != 1:
             return await ctx.send("Usage: !join [" + ", ".join(self.custom_roles) + "]")
