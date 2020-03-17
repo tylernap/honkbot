@@ -3,6 +3,7 @@ import dotenv
 import os
 from bots.honkbot import Honkbot
 from bots.remy import Remybot
+from bots.codes import EamuseRivals
 from discord.ext.commands import Bot
 import sys
 
@@ -22,5 +23,6 @@ if "__main__" in __name__:
     honkbot = Honkbot(logger, speedrun_api_key, google_api_key, bot=bot)
     bot.add_cog(honkbot)
     bot.add_cog(Remybot())
+    bot.add_cog(EamuseRivals())
 
     bot.run(discord_api_key)

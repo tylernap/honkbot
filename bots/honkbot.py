@@ -26,6 +26,8 @@ class Honkbot(commands.Cog):
             ),
         }
 
+        self.custom_roles = ['AKR', 'CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'CA', 'Canada']
+
         self.bot = bot
         self.logger = logger
         self.speedrun_api = speedrun_api
@@ -49,6 +51,7 @@ class Honkbot(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        self.logger.error(error)
         if isinstance(error, commands.CommandNotFound):
             await ctx.send("Use !help to see a list of commands")
 
@@ -62,31 +65,53 @@ class Honkbot(commands.Cog):
     @commands.command()
     async def join(self, ctx, *role: str):
         """
-        Sets the command invoker to the given role
+        Adds the given role to the command invoker
 
         Gives an error message if there are 0 or >1 roles specified, or if the
         specified role is not allowed.
 
         User Arguments:
-            role: OH, MI, KY, PA, IN, NY, or Canada
+            role: AKR, CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, CA, Canada
+
         """
-
-        allowed_roles = ['CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'Canada']
-
         if len(role) != 1:
-            await ctx.send("".join(["Usage: !join [", ", ".join(allowed_roles), "]"]))
-        elif role[0] not in allowed_roles:
-            await ctx.send("".join(["Allowed roles are: ", ", ".join(allowed_roles)]))
-        else:
-            role = discord.utils.get(ctx.message.guild.roles, name=role[0])
-            try:
-                if ctx.author.roles:
-                    await ctx.author.edit(roles=[role])
-                else:
-                    await ctx.author.add_roles(role)
-                await ctx.send(f"Adding {ctx.author.display_name} to {role}")
-            except Forbidden:
-                await ctx.send("I do not have permissions to assign roles right now. Sorry!")
+            return await ctx.send("Usage: !join [" + ", ".join(self.custom_roles) + "]")
+        elif role[0] not in self.custom_roles:
+            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
+        try:
+            role = discord.utils.get(ctx.guild.roles, name=role[0])
+            if role not in ctx.author.roles:
+                await ctx.author.add_roles(role)
+                return await ctx.send(f"Adding {ctx.author.display_name} to {role}")
+            else:
+                return await ctx.send(f"{ctx.author.display_name} is already in {role}")
+        except Forbidden:
+            await ctx.send("I do not have permissions to assign roles right now. Sorry!")
+
+    @commands.command()
+    async def leave(self, ctx, *role: str):
+        """
+        Removes the given role from the command invoker
+
+        Gives an error message if there are 0 or >1 roles specified, or if the
+        specified role is not allowed.
+
+        User Arguments:
+            role: CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, CA, Canada
+        """
+        if len(role) != 1:
+            return await ctx.send("Usage: !leave [" + ", ".join(self.custom_roles) + "]")
+        elif role[0] not in self.custom_roles:
+            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
+        try:
+            role = discord.utils.get(ctx.guild.roles, name=role[0])
+            if role in ctx.author.roles:
+                await ctx.author.remove_roles(role)
+                return await ctx.send(f"Removing {ctx.author.display_name} from {role}")
+            else:
+                return await ctx.send(f"{ctx.author.display_name} is not in {role}")
+        except Forbidden:
+            await ctx.send("I do not have permissions to assign roles right now. Sorry!")
 
     def get_display_time(self, timing_type):
         """

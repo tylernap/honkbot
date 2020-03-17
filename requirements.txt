@@ -1,5 +1,6 @@
-discord.py==1.2.3
+discord.py==1.2.5
 python-dotenv>=0.9.1
 pytz==2018.5
 requests==2.20.0
 beautifulsoup4==4.6.3
+psycopg2==2.8.4
