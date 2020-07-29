@@ -48,6 +48,8 @@ class Honkbot(commands.Cog):
                 await message.channel.send("beep")
             else:
                 await message.channel.send("HONK!")
+        if "dygma" in message.content.lower():
+            await message.channel.send("whats dygma")
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
