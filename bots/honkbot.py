@@ -26,7 +26,7 @@ class Honkbot(commands.Cog):
             ),
         }
 
-        self.custom_roles = ['AKR', 'CLE', 'COL', 'DAY', 'CIN', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'CA', 'Canada']
+        self.custom_roles = ['AKR', 'CIN', 'CLE', 'COL', 'DAY', 'TOL', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'CA', 'Canada']
 
         self.bot = bot
         self.logger = logger
@@ -73,7 +73,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
 
         """
         if len(role) != 1:
@@ -99,7 +99,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: CLE, COL, DAY, CIN, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
         """
         if len(role) != 1:
             return await ctx.send("Usage: !leave [" + ", ".join(self.custom_roles) + "]")
