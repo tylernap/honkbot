@@ -71,24 +71,36 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
         image or a message describing what it found instead
     """
     song_page = search_song(query)
+    found_images = {}
     if song_page:
         # First try to get the image from the Gallery
         gallery = song_page.find("a", href=re.compile(r"Gallery"))
         if gallery:
-            image_url = get_image_from_gallery(gallery["href"], image_type)
-            if image_url:
-                return f"{REMY_URL}{image_url}"
+            found_images['banner'] = get_image_from_gallery(gallery["href"], 'banner')
+            found_images['jacket'] = get_image_from_gallery(gallery["href"], 'jacket')
+            if image_type in found_images:
+                return f"{REMY_URL}{found_images[image_type]}"
         # If there is no Gallery, try to find it on the page
         images = song_page.find_all("div", {"class": "thumbinner"})
         for image in images:
-            if image_type in image.find("div", {"class": "thumbcaption"}).text:
-                return f"{REMY_URL}{image.find('img')['src']}"
-        # If we can't find it on either, give out a message
+            if 'banner' in image.find("div", {"class": "thumbcaption"}).text:
+                found_images['banner'] = f"{REMY_URL}{image.find('img')['src']}"
+            elif 'jacket' in image.find("div", {"class": "thumbcaption"}).text:
+                found_images['jacket'] = f"{REMY_URL}{image.find('img')['src']}"
+            if image_type in found_images:
+                return f"{found_images[image_type]}"
+        # If we haven't found the right image in either place
         song_title = song_page.find("h1", {"id": "firstHeading"}).text
-        if song_title.lower() == query.lower():
-            return f"{song_title} does not have a {image_type}"
+        # Return any other images we found
+        if any(found_images):
+            image_url = next(img for img in found_images.values() if img)
+            return f"{song_title} does not have a {image_type}, but it does have this:\n{image_url}"
+        # Or give a message that there are no related images
         else:
-            return f"{query} seems to be the song {song_title} but it does not have a {image_type}"
+            if song_title.lower() == query.lower():
+                return f"{song_title} does not have any images"
+            else:
+                return f"{query} seems to be the song {song_title} but it does not have any images"
     else:  # No song page
         return f"Could not find a song that looks like: {query}"
 
