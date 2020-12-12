@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: honkbot
+  name: honkbot
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: honkbot
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: honkbot
+    spec:
+     containers:
+        - envFrom:
+            - secretRef:
+                name: honkbot
+          image: gcr.io/honkbot-220400/github.com/tylernap/honkbot
+          imagePullPolicy: IfNotPresent
+          name: github-tylernap-honkbot-sha256-1
+
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app: honkbot
+  name: honkbot-hpa-edod
+  namespace: default
+spec:
+  maxReplicas: 5
+  metrics:
+    - resource:
+        name: cpu
+        targetAverageUtilization: 80
+      type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: honkbot

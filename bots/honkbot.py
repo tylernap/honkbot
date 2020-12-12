@@ -14,19 +14,34 @@ class Honkbot(commands.Cog):
         self.eamuse_maintenance = {
             "normal": (
                 datetime.time(hour=20, tzinfo=pytz.utc),
-                datetime.time(hour=22, tzinfo=pytz.utc)
+                datetime.time(hour=22, tzinfo=pytz.utc),
             ),
             "extended": (
                 datetime.time(hour=17, tzinfo=pytz.utc),
-                datetime.time(hour=22, tzinfo=pytz.utc)
+                datetime.time(hour=22, tzinfo=pytz.utc),
             ),
             "us": (
                 datetime.time(hour=12, tzinfo=pytz.utc),
-                datetime.time(hour=17, tzinfo=pytz.utc)
+                datetime.time(hour=17, tzinfo=pytz.utc),
             ),
         }
 
-        self.custom_roles = ['AKR', 'CIN', 'CLE', 'COL', 'DAY', 'TOL', 'OH', 'MI', 'KY', 'PA', 'IN', 'NY', 'CA', 'Canada']
+        self.custom_roles = [
+            "AKR",
+            "CIN",
+            "CLE",
+            "COL",
+            "DAY",
+            "TOL",
+            "OH",
+            "MI",
+            "KY",
+            "PA",
+            "IN",
+            "NY",
+            "CA",
+            "Canada",
+        ]
 
         self.bot = bot
         self.logger = logger
@@ -88,7 +103,9 @@ class Honkbot(commands.Cog):
             else:
                 return await ctx.send(f"{ctx.author.display_name} is already in {role}")
         except Forbidden:
-            await ctx.send("I do not have permissions to assign roles right now. Sorry!")
+            await ctx.send(
+                "I do not have permissions to assign roles right now. Sorry!"
+            )
 
     @commands.command()
     async def leave(self, ctx, *role: str):
@@ -102,7 +119,9 @@ class Honkbot(commands.Cog):
             role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
         """
         if len(role) != 1:
-            return await ctx.send("Usage: !leave [" + ", ".join(self.custom_roles) + "]")
+            return await ctx.send(
+                "Usage: !leave [" + ", ".join(self.custom_roles) + "]"
+            )
         elif role[0] not in self.custom_roles:
             return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
         try:
@@ -113,7 +132,9 @@ class Honkbot(commands.Cog):
             else:
                 return await ctx.send(f"{ctx.author.display_name} is not in {role}")
         except Forbidden:
-            await ctx.send("I do not have permissions to assign roles right now. Sorry!")
+            await ctx.send(
+                "I do not have permissions to assign roles right now. Sorry!"
+            )
 
     def get_display_time(self, timing_type):
         """
@@ -123,8 +144,12 @@ class Honkbot(commands.Cog):
         Uses the timing_types: "us", "normal", "extended" from self
         """
         today = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
-        begin_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][0])
-        end_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][1])
+        begin_datetime = datetime.datetime.combine(
+            today.date(), self.eamuse_maintenance[timing_type][0]
+        )
+        end_datetime = datetime.datetime.combine(
+            today.date(), self.eamuse_maintenance[timing_type][1]
+        )
         if begin_datetime <= today <= end_datetime:
             emoji = ":x:"
         else:
@@ -150,14 +175,19 @@ class Honkbot(commands.Cog):
         :return: True if this is a Monday that Americans have to deal with maintenance
                  False if it's not
         """
-        today_in_japan = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("Japan"))
+        today_in_japan = datetime.datetime.utcnow().replace(
+            tzinfo=pytz.timezone("Japan")
+        )
         tomorrow_in_japan = today_in_japan + datetime.timedelta(days=1)
-        today_in_eastern = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone("America/New_York"))
+        today_in_eastern = datetime.datetime.utcnow().replace(
+            tzinfo=pytz.timezone("America/New_York")
+        )
 
         # If it's Monday in America, and either the third Tuesday or the Monday before that in Japan
         if today_in_eastern.weekday() == 0 and (
-                (today_in_japan.weekday() == 1 and 15 <= today_in_japan.day <= 21) or (
-                tomorrow_in_japan.weekday() == 1 and 15 <= tomorrow_in_japan.day <= 21)):
+            (today_in_japan.weekday() == 1 and 15 <= today_in_japan.day <= 21)
+            or (tomorrow_in_japan.weekday() == 1 and 15 <= tomorrow_in_japan.day <= 21)
+        ):
             return True
         return False
 
@@ -227,44 +257,58 @@ class Honkbot(commands.Cog):
                         results.append(game)
                     next_page = ""
                     for page in r.json()["pagination"]["links"]:
-                        if "next" in page['rel']:
-                            next_page = page['uri']
+                        if "next" in page["rel"]:
+                            next_page = page["uri"]
                     api_next = next_page
                 if results:
                     if search == self.lastRecordSearch:
                         results = [results[0]]
                     if len(results) == 1:
                         game_id = results[0]["id"]
-                        r = requests.get("".join([base_url, "games/", game_id]), headers=auth)
-                        game_name = r.json()['data']['names']['international']
                         r = requests.get(
-                            "".join([base_url, "games/", game_id, "/categories"]), headers=auth)
+                            "".join([base_url, "games/", game_id]), headers=auth
+                        )
+                        game_name = r.json()["data"]["names"]["international"]
+                        r = requests.get(
+                            "".join([base_url, "games/", game_id, "/categories"]),
+                            headers=auth,
+                        )
                         game_category = {}
-                        for category in r.json()['data']:
-                            if category['name'].startswith('Any%'):
+                        for category in r.json()["data"]:
+                            if category["name"].startswith("Any%"):
                                 game_category = category
                                 break
                         game_records_url = ""
                         if game_category:
-                            for link in game_category['links']:
-                                if "records" in link['rel']:
-                                    game_records_url = link['uri']
+                            for link in game_category["links"]:
+                                if "records" in link["rel"]:
+                                    game_records_url = link["uri"]
                             r = requests.get(game_records_url, headers=auth)
-                            run = r.json()['data'][0]['runs'][0]['run']
-                            record = run['times']['realtime'][2:]
-                            user_id = run['players'][0]['id']
-                            r = requests.get("".join([base_url, "users/", user_id]), headers=auth)
-                            user_name = r.json()['data']['names']['international']
+                            run = r.json()["data"][0]["runs"][0]["run"]
+                            record = run["times"]["realtime"][2:]
+                            user_id = run["players"][0]["id"]
+                            r = requests.get(
+                                "".join([base_url, "users/", user_id]), headers=auth
+                            )
+                            user_name = r.json()["data"]["names"]["international"]
 
-                            await ctx.send(f"The Any% record for {game_name} is {record} by {user_name}")
+                            await ctx.send(
+                                f"The Any% record for {game_name} is {record} by {user_name}"
+                            )
 
                         else:
-                            await ctx.send("There are no Any% records for {}".format(game_name))
+                            await ctx.send(
+                                "There are no Any% records for {}".format(game_name)
+                            )
                     elif len(results) < 5:
                         names = []
                         for result in results:
-                            names.append(result['names']['international'])
-                        await ctx.send("Multiple results. Do a search for the following: {}".format(", ".join(names)))
+                            names.append(result["names"]["international"])
+                        await ctx.send(
+                            "Multiple results. Do a search for the following: {}".format(
+                                ", ".join(names)
+                            )
+                        )
                         await ctx.send("If you want the first result, redo the search")
                     else:
                         await ctx.send("Too many results! Be a little more specific")
@@ -292,8 +336,9 @@ class Honkbot(commands.Cog):
             if len(query) < 150:
                 cx_id = "009855409252983983547:3xrcodch8sc"
                 url = (
-                        f"https://www.googleapis.com/customsearch/v1?q={search}" +
-                        f"&cx={cx_id}&searchType=image" + f"&key={self.google_api}"
+                    f"https://www.googleapis.com/customsearch/v1?q={search}"
+                    + f"&cx={cx_id}&safe=active&searchType=image"
+                    + f"&key={self.google_api}"
                 )
                 r = requests.get(url)
                 try:
