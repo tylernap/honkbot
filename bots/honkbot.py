@@ -33,7 +33,6 @@ class Honkbot(commands.Cog):
             "COL",
             "DAY",
             "TOL",
-            "OH",
             "MI",
             "KY",
             "PA",
@@ -88,7 +87,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
 
         """
         if len(role) != 1:
@@ -116,7 +115,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
         """
         if len(role) != 1:
             return await ctx.send(
