@@ -130,6 +130,13 @@ class Honkbot(commands.Cog):
             )
 
     def get_role_from_input(self, ctx, role_input: tuple):
+        """
+        Turn a user's string from !join or !leave into a Discord Role object
+
+        :param ctx: Discord Context (for accessing the Roles list)
+        :param role_input: Tuple of Strings representing user input (split by spaces)
+        :return: A tuple of either a Role or False, and an accompanying message
+        """
         if len(role_input) != 1:
             return False, "Usage: !join [" + ", ".join(self.custom_roles) + "]"
 
