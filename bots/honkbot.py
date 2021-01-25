@@ -33,7 +33,6 @@ class Honkbot(commands.Cog):
             "COL",
             "DAY",
             "TOL",
-            "OH",
             "MI",
             "KY",
             "PA",
@@ -80,7 +79,7 @@ class Honkbot(commands.Cog):
         await ctx.send("test")
 
     @commands.command()
-    async def join(self, ctx, *role: str):
+    async def join(self, ctx, *role_input: str):
         """
         Adds the given role to the command invoker
 
@@ -88,15 +87,13 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
 
         """
-        if len(role) != 1:
-            return await ctx.send("Usage: !join [" + ", ".join(self.custom_roles) + "]")
-        elif role[0] not in self.custom_roles:
-            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
+        role, message = self.get_role_from_input(ctx, role_input)
+        if not role:
+            return await ctx.send(message)
         try:
-            role = discord.utils.get(ctx.guild.roles, name=role[0])
             if role not in ctx.author.roles:
                 await ctx.author.add_roles(role)
                 return await ctx.send(f"Adding {ctx.author.display_name} to {role}")
@@ -108,7 +105,7 @@ class Honkbot(commands.Cog):
             )
 
     @commands.command()
-    async def leave(self, ctx, *role: str):
+    async def leave(self, ctx, *role_input: str):
         """
         Removes the given role from the command invoker
 
@@ -116,16 +113,12 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, OH, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
         """
-        if len(role) != 1:
-            return await ctx.send(
-                "Usage: !leave [" + ", ".join(self.custom_roles) + "]"
-            )
-        elif role[0] not in self.custom_roles:
-            return await ctx.send("Allowed roles are: " + ", ".join(self.custom_roles))
+        role, message = self.get_role_from_input(ctx, role_input)
+        if not role:
+            return await ctx.send(message)
         try:
-            role = discord.utils.get(ctx.guild.roles, name=role[0])
             if role in ctx.author.roles:
                 await ctx.author.remove_roles(role)
                 return await ctx.send(f"Removing {ctx.author.display_name} from {role}")
@@ -135,6 +128,24 @@ class Honkbot(commands.Cog):
             await ctx.send(
                 "I do not have permissions to assign roles right now. Sorry!"
             )
+
+    def get_role_from_input(self, ctx, role_input: tuple):
+        """
+        Turn a user's string from !join or !leave into a Discord Role object
+
+        :param ctx: Discord Context (for accessing the Roles list)
+        :param role_input: Tuple of Strings representing user input (split by spaces)
+        :return: A tuple of either a Role or False, and an accompanying message
+        """
+        if len(role_input) != 1:
+            return False, "Usage: !join [" + ", ".join(self.custom_roles) + "]"
+
+        role = next((role for role in self.custom_roles if role_input[0].lower() == role.lower()), None)
+
+        if role:
+            return discord.utils.get(ctx.guild.roles, name=role), ""
+        else:
+            return False, "Allowed roles are: " + ", ".join(self.custom_roles)
 
     def get_display_time(self, timing_type):
         """
