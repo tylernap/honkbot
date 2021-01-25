@@ -232,7 +232,7 @@ class Honkbot(commands.Cog):
         if len(name) < 1:
             await ctx.send("No one to insult :(")
         else:
-            r = requests.get("http://quandyfactory.com/insult/json")
+            r = requests.get("https://quandyfactory.com/insult/json")
             insult = r.json()["insult"]
             await ctx.send(insult.replace("Thou art", f"{' '.join(name)} is"))
 
@@ -260,7 +260,7 @@ class Honkbot(commands.Cog):
             auth = {"Authorization": "Token {}".format(self.speedrun_api)}
             results = []
             if len(search) < 100:
-                base_url = "http://www.speedrun.com/api/v1/"
+                base_url = "https://www.speedrun.com/api/v1/"
                 api_next = "".join([base_url, "games?name={}".format(search)])
                 while api_next:
                     r = requests.get(api_next, headers=auth)
