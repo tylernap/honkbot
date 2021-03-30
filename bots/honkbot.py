@@ -25,8 +25,8 @@ class Honkbot(commands.Cog):
         self.messages = {
             'us_games': 'US Servers (DDR White, IIDX Lightning)',
             'jp_games': 'JP Servers (DDR Gold, IIDX Classic, All Other)',
-            'website_down': 'Login to eAmusement website unavailable during this time.',
-            'card_down': 'eAmusement card cannot be used during this time.'
+            'website_down': 'Login to e-amusement website unavailable during this time.',
+            'card_down': 'e-amusement card cannot be used during this time.'
         }
 
         self.custom_roles = [
@@ -152,7 +152,7 @@ class Honkbot(commands.Cog):
 
     def get_display_time(self, timing_type):
         """
-        Get a display time for today's eAmusement maintenance time.
+        Get a display time for today's e-amusement maintenance time.
 
         Uses the timing_types: "daily", "extended" from self
 
@@ -201,7 +201,7 @@ class Honkbot(commands.Cog):
     @commands.command()
     async def eamuse(self, ctx):
         """
-        Gets eAmusement maintenance time.
+        Gets e-amusement maintenance time.
 
         Japanese Servers: 5:00 AM to 7:00 AM JST on weekdays
         Extended and US Servers: 3:00 AM to 7:00 AM JST on the third Tuesday
@@ -209,7 +209,7 @@ class Honkbot(commands.Cog):
 
         if self.is_extended_maintenance_time():
             await ctx.send(("**Extended Maintenance today. "
-                            "All games and eAmusement websites under maintenance from " +
+                            "All games and e-amusement websites under maintenance from " +
                             f"{self.get_display_time('extended')}. " +
                             f"{self.messages['website_down']} " +
                             f"{self.messages['card_down']}**"))
