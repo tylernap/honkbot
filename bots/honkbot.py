@@ -209,21 +209,21 @@ class Honkbot(commands.Cog):
 
         if self.is_extended_maintenance_time():
             await ctx.send(("**Extended Maintenance today. "
-                            "All games and e-amusement websites under maintenance from " +
-                            f"{self.get_display_time('extended')}. " +
-                            f"{self.messages['website_down']} " +
-                            f"{self.messages['card_down']}**"))
+                            "All games and e-amusement websites under maintenance from "
+                            + f"{self.get_display_time('extended')}. "
+                            + f"{self.messages['website_down']} "
+                            + f"{self.messages['card_down']}**"))
         else:
             ddr_message = f"{self.messages['us_games']}: **No maintenance today.**"
-            website_message = ("**Website under maintenance from " +
-                               f"{self.get_display_time('daily')} daily. " +
-                               f"{self.messages['website_down']}**")
+            website_message = ("**Website under maintenance from "
+                               + f"{self.get_display_time('daily')} daily. "
+                               + f"{self.messages['website_down']}**")
 
             if datetime.datetime.today().weekday() in range(0, 4):
                 other_message = (f"{self.messages['jp_games']}: " +
-                                 "**Japanese game servers under maintenance from " +
-                                 f"{self.get_display_time('daily')} today. " +
-                                 f"{self.messages['card_down']}**")
+                                 "**Japanese game servers under maintenance from "
+                                 + f"{self.get_display_time('daily')} today. "
+                                 + f"{self.messages['card_down']}**")
             else:
                 other_message = f"{self.messages['jp_games']}: **No maintenance today.**"
 
