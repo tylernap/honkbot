@@ -12,18 +12,21 @@ from discord.errors import Forbidden
 class Honkbot(commands.Cog):
     def __init__(self, logger, speedrun_api, google_api, bot=None):
         self.eamuse_maintenance = {
-            "normal": (
+            "daily": (
                 datetime.time(hour=20, tzinfo=pytz.utc),
                 datetime.time(hour=22, tzinfo=pytz.utc),
             ),
             "extended": (
                 datetime.time(hour=17, tzinfo=pytz.utc),
                 datetime.time(hour=22, tzinfo=pytz.utc),
-            ),
-            "us": (
-                datetime.time(hour=12, tzinfo=pytz.utc),
-                datetime.time(hour=17, tzinfo=pytz.utc),
-            ),
+            )
+        }
+
+        self.messages = {
+            'us_games': 'US Servers (DDR White, IIDX Lightning)',
+            'jp_games': 'JP Servers (DDR Gold, IIDX Classic, All Other)',
+            'website_down': 'Login to e-amusement website unavailable during this time.',
+            'card_down': 'e-amusement card cannot be used during this time.'
         }
 
         self.custom_roles = [
@@ -149,25 +152,22 @@ class Honkbot(commands.Cog):
 
     def get_display_time(self, timing_type):
         """
-        Get a display time for today's eAmusement maintenance time. Includes an
-        emoji for if the current time is within that time.
+        Get a display time for today's e-amusement maintenance time.
 
-        Uses the timing_types: "us", "normal", "extended" from self
+        Uses the timing_types: "daily", "extended" from self
+
+        :returns A String in the format "4PM-6PM" based on today's maintenance time
         """
-        today = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        today = datetime.datetime.utcnow().astimezone(pytz.utc)
         begin_datetime = datetime.datetime.combine(
             today.date(), self.eamuse_maintenance[timing_type][0]
         )
         end_datetime = datetime.datetime.combine(
             today.date(), self.eamuse_maintenance[timing_type][1]
         )
-        if begin_datetime <= today <= end_datetime:
-            emoji = ":x:"
-        else:
-            emoji = ":white_check_mark:"
-        begin_time = begin_datetime.astimezone(pytz.timezone("America/New_York"))
-        end_time = end_datetime.astimezone(pytz.timezone("America/New_York"))
-        return f"{emoji} - {begin_time.strftime('%H:%M')}-{end_time.strftime('%H:%M')}"
+        begin_hour = begin_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip('0')
+        end_hour = end_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip('0')
+        return f"{begin_hour}PM-{end_hour}PM ET"
 
     @staticmethod
     def is_extended_maintenance_time():
@@ -186,13 +186,9 @@ class Honkbot(commands.Cog):
         :return: True if this is a Monday that Americans have to deal with maintenance
                  False if it's not
         """
-        today_in_japan = datetime.datetime.utcnow().replace(
-            tzinfo=pytz.timezone("Japan")
-        )
+        today_in_japan = datetime.datetime.utcnow().astimezone(pytz.timezone("Japan"))
         tomorrow_in_japan = today_in_japan + datetime.timedelta(days=1)
-        today_in_eastern = datetime.datetime.utcnow().replace(
-            tzinfo=pytz.timezone("America/New_York")
-        )
+        today_in_eastern = datetime.datetime.utcnow().astimezone(pytz.timezone("America/New_York"))
 
         # If it's Monday in America, and either the third Tuesday or the Monday before that in Japan
         if today_in_eastern.weekday() == 0 and (
@@ -205,21 +201,33 @@ class Honkbot(commands.Cog):
     @commands.command()
     async def eamuse(self, ctx):
         """
-        Gets eAmusement maintenance time.
+        Gets e-amusement maintenance time.
 
-        Japanese Servers: 5:00 AM to 7:00 AM JST every day
+        Japanese Servers: 5:00 AM to 7:00 AM JST on weekdays
         Extended and US Servers: 3:00 AM to 7:00 AM JST on the third Tuesday
         """
 
         if self.is_extended_maintenance_time():
-            ddr_message = self.get_display_time("us")
-            other_message = self.get_display_time("extended")
+            await ctx.send(("**Extended Maintenance today. "
+                            "All games and e-amusement websites under maintenance from "
+                            + f"{self.get_display_time('extended')}. "
+                            + f"{self.messages['website_down']} "
+                            + f"{self.messages['card_down']}**"))
         else:
-            ddr_message = ":white_check_mark: - no maintenance today"
-            other_message = self.get_display_time("normal")
+            ddr_message = f"{self.messages['us_games']}: **No maintenance today.**"
+            website_message = ("**Website under maintenance from "
+                               + f"{self.get_display_time('daily')} daily. "
+                               + f"{self.messages['website_down']}**")
 
-        await ctx.send(f"DDR: {ddr_message}")
-        await ctx.send(f"Other: {other_message}")
+            if datetime.datetime.today().weekday() in range(0, 4):
+                other_message = (f"{self.messages['jp_games']}: " +
+                                 "**Japanese game servers under maintenance from "
+                                 + f"{self.get_display_time('daily')} today. "
+                                 + f"{self.messages['card_down']}**")
+            else:
+                other_message = f"{self.messages['jp_games']}: **No maintenance today.**"
+
+            await ctx.send(f"{ddr_message}\n{other_message}\n{website_message}")
 
     @commands.command()
     async def insult(self, ctx, *name: str):
