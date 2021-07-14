@@ -48,6 +48,10 @@ Honkbot takes advantage of the following services:
 
 Calling Honkbot directly, it will try to find the `.env` file located in the same directory. This file contains user specific settings such as API keys for the various services. You can find the template for the `.env` file in `env.example`
 
+## Discord API Settings
+
+Discord introduced the concept of Intent into their APIs which allows bots to monitor certain event buses and load them into caches. In order for the bot to work correctly, you must make sure that the `Server Members Intent` is enabled in your bot settings as it is disabled by default. More information on intents as well as enabling the server members intent can be found [here](https://gist.github.com/advaith1/e69bcc1cdd6d0087322734451f15aa2f#getting-privileged-intents)
+
 ## Contributing
 
 Want to help keep Honkbot awesome? Great! Just a couple things:
