@@ -4,7 +4,7 @@ import requests
 import re
 from discord.ext import commands
 
-REMY_URL = "http://remywiki.com"
+REMY_URL = "https://remywiki.com"
 
 
 def search_song(query: str) -> Optional[BeautifulSoup]:
