@@ -43,6 +43,7 @@ class Honkbot(commands.Cog):
             "NY",
             "CA",
             "Canada",
+            "EX-OH",
         ]
 
         self.bot = bot
@@ -90,7 +91,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada, EX-OH
 
         """
         role, message = self.get_role_from_input(ctx, role_input)
@@ -116,7 +117,7 @@ class Honkbot(commands.Cog):
         specified role is not allowed.
 
         User Arguments:
-            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada
+            role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada, EX-OH
         """
         role, message = self.get_role_from_input(ctx, role_input)
         if not role:
