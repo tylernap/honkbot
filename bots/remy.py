@@ -7,32 +7,52 @@ from discord.ext import commands
 REMY_URL = "https://remywiki.com"
 
 
+def page_is_song(page: BeautifulSoup):
+    if page.find("a", {"title": "Category:Songs"}):
+        return True
+    return False
+
+
 def search_song(query: str) -> Optional[BeautifulSoup]:
     """
     Tries to find a certain song on RemyWiki
 
-    MediaWiki tries to match an exact article title. If it doesn't find the
-    exact title, it gives you a page with a list of suggestions. This
-    leverages that by either going to the direct page, or going to the first
-    page in the list of results.
+    MediaWiki will tell you if a title that you've searched is found as a direct
+        article title. However, if it doesn't find one, the top page may not be
+        a song. The category search to force songs won't allow the direct
+        article title. So, we search the raw title, see if we've found it, then
+        search in songs only if we haven't. So exact titles should always match,
+        and close ones should usually match.
 
     :param query: a string representing something that's supposed to be a
         song name to find
     :return: a BeautifulSoup object representing a RemyWiki page for a song,
         or None, representing a lack of results
     """
+    search_data = {"search": query}
+    remy_search = requests.get(f"{REMY_URL}/index.php", params=search_data)
+    remy_data = BeautifulSoup(remy_search.text, 'html.parser')
+
+    # If we were redirected to a Page and it's a Song, just return it
+    if page_is_song(remy_data):
+        return remy_data
+
+    # If we're not on a Page, check to see if the Search found an exact match
+    already_found = remy_data.find("p", {"class": "mw-search-exists"})
+    if already_found:
+        song_result = requests.get(f"{REMY_URL}{already_found.strong.a['href']}")
+        possible_song = BeautifulSoup(song_result.text, 'html.parser')
+        if page_is_song(possible_song):
+            return possible_song
+
+    # Otherwise, just take the first search result when searching in category
     search_data = {'search': f"{query} incategory:\"Songs\""}
     remy_search = requests.get(f"{REMY_URL}/index.php", params=search_data)
     remy_data = BeautifulSoup(remy_search.text, 'html.parser')
-    if remy_data.title.string.lower().startswith(query.lower()):
-        return remy_data
-    else:
-        first_result = remy_data.find("ul", {"class": "mw-search-results"})
-        if first_result:
-            song_result = requests.post(f"{REMY_URL}{first_result.li.div.a['href']}")
-            return BeautifulSoup(song_result.text, 'html.parser')
-        else:
-            return None
+    first_result = remy_data.find("ul", {"class": "mw-search-results"})
+    if first_result:
+        song_result = requests.get(f"{REMY_URL}{first_result.li.div.a['href']}")
+        return BeautifulSoup(song_result.text, 'html.parser')
 
 
 def get_image_from_gallery(href: str, image_type: str) -> Optional[str]:
@@ -76,8 +96,12 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
         # First try to get the image from the Gallery
         gallery = song_page.find("a", href=re.compile(r"Gallery"))
         if gallery:
-            found_images['banner'] = get_image_from_gallery(gallery["href"], 'banner')
-            found_images['jacket'] = get_image_from_gallery(gallery["href"], 'jacket')
+            first_gallery_banner = get_image_from_gallery(gallery["href"], 'banner')
+            first_gallery_jacket = get_image_from_gallery(gallery["href"], 'jacket')
+            if first_gallery_banner:
+                found_images['banner'] = first_gallery_banner
+            if first_gallery_jacket:
+                found_images['jacket'] = first_gallery_jacket
             if image_type in found_images:
                 return f"{REMY_URL}{found_images[image_type]}"
         # If there is no Gallery, try to find it on the page
