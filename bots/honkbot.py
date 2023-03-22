@@ -73,7 +73,8 @@ class Honkbot(commands.Cog):
     async def on_command_error(self, ctx, error):
         self.logger.error(error)
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send("Use !help to see a list of commands")
+            if ctx.invoked_with.isalnum():
+                await ctx.send(f"{ctx.invoked_with} is not a command. Use !help to see a list of commands")
 
     @commands.command()
     async def test(self, ctx):
@@ -220,7 +221,7 @@ class Honkbot(commands.Cog):
                                + f"{self.get_display_time('daily')} daily. "
                                + f"{self.messages['website_down']}**")
 
-            if datetime.datetime.today().weekday() in range(0, 4):
+            if datetime.datetime.today().weekday() in [6, 0, 1, 2, 3]:
                 other_message = (f"{self.messages['jp_games']}: " +
                                  "**Japanese game servers under maintenance from "
                                  + f"{self.get_display_time('daily')} today. "
