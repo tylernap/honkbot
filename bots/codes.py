@@ -1,14 +1,15 @@
 import re
+import os
 
 import discord
 from discord.ext import commands
 
 import models
 
+GUILD_ID = os.getenv("GUILD_ID")
 
 class EamuseRivals(commands.Cog):
-
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
     async def ddrrival(self, ctx, action=None, *args):
         """
         Accesses eAmuse rival data stored by the users
@@ -148,7 +149,7 @@ class EamuseRivals(commands.Cog):
                     raise e
             return await ctx.send("Entry has been deleted!")
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
     async def iidxrival(self, ctx, action=None, *args):
         """
         Accesses eAmuse rival data stored by the users
