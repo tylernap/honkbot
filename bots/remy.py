@@ -1,9 +1,12 @@
 from bs4 import BeautifulSoup
 from typing import Optional
+import os
 import requests
 import re
+import discord
 from discord.ext import commands
 
+GUILD_ID = os.getenv("GUILD_ID")
 REMY_URL = "https://remywiki.com"
 
 
@@ -131,7 +134,8 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
 
 class Remybot(commands.Cog):
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("title", description="Name of the song to search for")
     async def jacket(self, ctx, *, title: str):
         """
         Returns a jacket for a bemani song from remywiki.
@@ -140,9 +144,10 @@ class Remybot(commands.Cog):
             title: the name of a song to search for
         """
         response = get_image(title, 'jacket')
-        await ctx.send(response)
+        await ctx.respond(response)
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("title", description="Name of the song to search for")
     async def banner(self, ctx, *, title: str):
         """
         Returns a banner for a bemani song from remywiki.
@@ -151,4 +156,4 @@ class Remybot(commands.Cog):
             title: the name of a song to search for
         """
         response = get_image(title, 'banner')
-        await ctx.send(response)
+        await ctx.respond(response)

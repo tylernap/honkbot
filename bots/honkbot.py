@@ -1,5 +1,7 @@
 # Python Standard Library
 import datetime
+import dotenv
+import os
 import pytz
 import requests
 
@@ -8,6 +10,23 @@ import discord
 from discord.ext import commands
 from discord.errors import Forbidden
 
+GUILD_ID = os.getenv("GUILD_ID")
+CUSTOM_ROLES = [
+    "AKR",
+    "CIN",
+    "CLE",
+    "COL",
+    "DAY",
+    "TOL",
+    "MI",
+    "KY",
+    "PA",
+    "IN",
+    "NY",
+    "CA",
+    "Canada",
+    "EX-OH",
+]
 
 class Honkbot(commands.Cog):
     def __init__(self, logger, speedrun_api, google_api, bot=None):
@@ -28,23 +47,6 @@ class Honkbot(commands.Cog):
             'website_down': 'Login to e-amusement website unavailable during this time.',
             'card_down': 'e-amusement card cannot be used during this time.'
         }
-
-        self.custom_roles = [
-            "AKR",
-            "CIN",
-            "CLE",
-            "COL",
-            "DAY",
-            "TOL",
-            "MI",
-            "KY",
-            "PA",
-            "IN",
-            "NY",
-            "CA",
-            "Canada",
-            "EX-OH",
-        ]
 
         self.bot = bot
         self.logger = logger
@@ -69,22 +71,17 @@ class Honkbot(commands.Cog):
         if "dygma" in message.content.lower():
             await message.channel.send("whats dygma")
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        self.logger.error(error)
-        if isinstance(error, commands.CommandNotFound):
-            if ctx.invoked_with.isalnum():
-                await ctx.send(f"{ctx.invoked_with} is not a command. Use !help to see a list of commands")
-
-    @commands.command()
-    async def test(self, ctx):
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("input", description="Test input", default="test")
+    async def test(self, ctx, input):
         """
         Test if the bot is working
         """
-        await ctx.send("test")
+        await ctx.respond(f"test: {input}")
 
-    @commands.command()
-    async def join(self, ctx, *role_input: str):
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("role", description="Role to be added to you", choices=CUSTOM_ROLES)
+    async def join(self, ctx, role: str):
         """
         Adds the given role to the command invoker
 
@@ -95,22 +92,27 @@ class Honkbot(commands.Cog):
             role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada, EX-OH
 
         """
-        role, message = self.get_role_from_input(ctx, role_input)
-        if not role:
-            return await ctx.send(message)
+        found_role, message = self.get_role_from_input(ctx, role)
+        if not found_role:
+            return await ctx.respond(message, ephemeral=True)
         try:
-            if role not in ctx.author.roles:
-                await ctx.author.add_roles(role)
-                return await ctx.send(f"Adding {ctx.author.display_name} to {role}")
+            if found_role not in ctx.author.roles:
+                await ctx.author.add_roles(found_role)
+                return await ctx.respond(f"Adding {ctx.author.display_name} to {found_role}")
             else:
-                return await ctx.send(f"{ctx.author.display_name} is already in {role}")
+                return await ctx.respond(
+                    f"{ctx.author.display_name} is already in {found_role}",
+                    ephemeral=True
+                )
         except Forbidden:
-            await ctx.send(
-                "I do not have permissions to assign roles right now. Sorry!"
+            await ctx.respond(
+                "I do not have permissions to assign roles right now. Sorry!",
+                ephemeral=True
             )
 
-    @commands.command()
-    async def leave(self, ctx, *role_input: str):
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("role", description="Role to be removed from you", choices=CUSTOM_ROLES)
+    async def leave(self, ctx, role: str):
         """
         Removes the given role from the command invoker
 
@@ -120,37 +122,38 @@ class Honkbot(commands.Cog):
         User Arguments:
             role: AKR, CIN, CLE, COL, DAY, TOL, MI, KY, PA, IN, NY, CA, Canada, EX-OH
         """
-        role, message = self.get_role_from_input(ctx, role_input)
-        if not role:
-            return await ctx.send(message)
+        found_role, message = self.get_role_from_input(ctx, role)
+        if not found_role:
+            return await ctx.respond(message, ephemeral=True)
         try:
-            if role in ctx.author.roles:
-                await ctx.author.remove_roles(role)
-                return await ctx.send(f"Removing {ctx.author.display_name} from {role}")
+            if found_role in ctx.author.roles:
+                await ctx.author.remove_roles(found_role)
+                return await ctx.respond(f"Removing {ctx.author.display_name} from {found_role}")
             else:
-                return await ctx.send(f"{ctx.author.display_name} is not in {role}")
+                return await ctx.respond(
+                    f"{ctx.author.display_name} is not in {found_role}",
+                    ephemeral=True
+                )
         except Forbidden:
-            await ctx.send(
-                "I do not have permissions to assign roles right now. Sorry!"
+            await ctx.respond(
+                "I do not have permissions to assign roles right now. Sorry!",
+                ephemeral=True
             )
 
-    def get_role_from_input(self, ctx, role_input: tuple):
+    def get_role_from_input(self, ctx, role_input: str):
         """
-        Turn a user's string from !join or !leave into a Discord Role object
+        Turn a user's string from /join or /leave into a Discord Role object
 
         :param ctx: Discord Context (for accessing the Roles list)
         :param role_input: Tuple of Strings representing user input (split by spaces)
         :return: A tuple of either a Role or False, and an accompanying message
         """
-        if len(role_input) != 1:
-            return False, "Usage: !join [" + ", ".join(self.custom_roles) + "]"
-
-        role = next((role for role in self.custom_roles if role_input[0].lower() == role.lower()), None)
+        role = next((role for role in CUSTOM_ROLES if role_input.lower() == role.lower()), None)
 
         if role:
             return discord.utils.get(ctx.guild.roles, name=role), ""
         else:
-            return False, "Allowed roles are: " + ", ".join(self.custom_roles)
+            return False, "Allowed roles are: " + ", ".join(CUSTOM_ROLES)
 
     def get_display_time(self, timing_type):
         """
@@ -200,7 +203,7 @@ class Honkbot(commands.Cog):
             return True
         return False
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
     async def eamuse(self, ctx):
         """
         Gets e-amusement maintenance time.
@@ -210,7 +213,7 @@ class Honkbot(commands.Cog):
         """
 
         if self.is_extended_maintenance_time():
-            await ctx.send(("**Extended Maintenance today. "
+            await ctx.respond(("**Extended Maintenance today. "
                             "All games and e-amusement websites under maintenance from "
                             + f"{self.get_display_time('extended')}. "
                             + f"{self.messages['website_down']} "
@@ -229,10 +232,11 @@ class Honkbot(commands.Cog):
             else:
                 other_message = f"{self.messages['jp_games']}: **No maintenance today.**"
 
-            await ctx.send(f"{ddr_message}\n{other_message}\n{website_message}")
+            await ctx.respond(f"{ddr_message}\n{other_message}\n{website_message}")
 
-    @commands.command()
-    async def insult(self, ctx, *name: str):
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("name", description="Name to insult")
+    async def insult(self, ctx, name: str):
         """
         Returns a scathing insult about the given name.
 
@@ -240,20 +244,21 @@ class Honkbot(commands.Cog):
             name: name of person to insult
         """
         if len(name) < 1:
-            await ctx.send("No one to insult :(")
+            await ctx.respond("No one to insult :(", ephemeral=True)
         else:
             r = requests.get("https://quandyfactory.com/insult/json")
             insult = r.json()["insult"]
-            await ctx.send(insult.replace("Thou art", f"{' '.join(name)} is"))
+            await ctx.respond(insult.replace("Thou art", f"{name} is"))
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
     async def ranatalus(self, ctx):
         """
         Returns a scathing insult about this particular name.
         """
         await ctx.invoke(self.insult, "ranatalus")
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("search", description="Search terms to use")
     async def record(self, ctx, *, search: str = None):
         """
         Accesses speedrun.com to get world record of given game.
@@ -263,7 +268,10 @@ class Honkbot(commands.Cog):
         """
 
         if not self.speedrun_api:
-            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.respond(
+                "Sorry, cant do that right now! Ask your admin to enable",
+                ephemeral=True
+            )
             return
 
         if search:
@@ -313,33 +321,41 @@ class Honkbot(commands.Cog):
                             )
                             user_name = r.json()["data"]["names"]["international"]
 
-                            await ctx.send(
+                            await ctx.respond(
                                 f"The Any% record for {game_name} is {record} by {user_name}"
                             )
 
                         else:
-                            await ctx.send(
+                            await ctx.respond(
                                 "There are no Any% records for {}".format(game_name)
                             )
                     elif len(results) < 5:
                         names = []
                         for result in results:
                             names.append(result["names"]["international"])
-                        await ctx.send(
+                        await ctx.respond(
                             "Multiple results. Do a search for the following: {}".format(
                                 ", ".join(names)
-                            )
+                            ),
+                            ephemeral=True
                         )
-                        await ctx.send("If you want the first result, redo the search")
+                        await ctx.respond(
+                            "If you want the first result, redo the search",
+                            ephemeral=True
+                        )
                     else:
-                        await ctx.send("Too many results! Be a little more specific")
+                        await ctx.respond(
+                            "Too many results! Be a little more specific",
+                            ephemeral=True
+                        )
                 else:
-                    await ctx.send("No games with that name found!")
+                    await ctx.respond("No games with that name found!", ephemeral=True)
             self.lastRecordSearch = search
         else:
-            await ctx.send("You gotta give me a game to look for...")
+            await ctx.respond("You gotta give me a game to look for...", ephemeral=True)
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("search", description="Search terms to use")
     async def image(self, ctx, *, search: str = None):
         """
         Returns an image from Google from the given search terms.
@@ -349,7 +365,7 @@ class Honkbot(commands.Cog):
         """
 
         if not self.google_api:
-            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.respond("Sorry, cant do that right now! Ask your admin to enable")
             return
 
         if search:
@@ -364,15 +380,16 @@ class Honkbot(commands.Cog):
                 r = requests.get(url)
                 try:
                     response = r.json()["items"][0]["link"]
-                    await ctx.send(response)
+                    await ctx.respond(response)
                 except KeyError:
-                    await ctx.send(f"No results found for {query} :(")
+                    await ctx.respond(f"No results found for {query} :(", ephemeral=True)
             else:
-                await ctx.send("Query too big!")
+                await ctx.respond("Query too big!", ephemeral=True)
         else:
-            await ctx.send("Usage: !image <search term>")
+            await ctx.respond("Usage: /image <search term>", ephemeral=True)
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("search", description="Search terms to use")
     async def youtube(self, ctx, *, search: str = None):
         """
         Returns a video from YouTube from the given search terms
@@ -382,7 +399,10 @@ class Honkbot(commands.Cog):
         """
 
         if not self.google_api:
-            await ctx.send("Sorry, cant do that right now! Ask your admin to enable")
+            await ctx.respond(
+                "Sorry, cant do that right now! Ask your admin to enable",
+                ephemeral=True
+            )
             return
 
         if search:
@@ -394,14 +414,20 @@ class Honkbot(commands.Cog):
                 try:
                     response = r.json()["items"][0]["id"]["videoId"]
                 except IndexError:
-                    await ctx.send(f"Could not find any videos with search {query}")
+                    await ctx.respond(
+                        f"Could not find any videos with search {query}",
+                        ephemeral=True
+                    )
                     return
 
                 if response:
-                    await ctx.send(f"https://youtu.be/{response}")
+                    await ctx.respond(f"https://youtu.be/{response}")
                 else:
-                    await ctx.send(f"Could not find any videos with search {query}")
+                    await ctx.respond(
+                        f"Could not find any videos with search {query}",
+                        ephemeral=True
+                    )
             else:
-                await ctx.send("Query too long!")
+                await ctx.respond("Query too long!", ephemeral=True)
         else:
-            await ctx.send("Usage: !youtube <search terms>")
+            await ctx.respond("Usage: /youtube <search terms>", ephemeral=True)

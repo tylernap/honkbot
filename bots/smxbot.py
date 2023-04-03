@@ -1,7 +1,11 @@
 import requests
 import json
+import os
 import re
+import discord
 from discord.ext import commands
+
+GUILD_ID = os.getenv("GUILD_ID")
 
 
 """
@@ -39,7 +43,8 @@ def get_image(query: str) -> str:
 
 class Smxbot(commands.Cog):
 
-    @commands.command()
+    @commands.slash_command(guild_ids=[GUILD_ID])
+    @discord.option("title", description="Name of the song to search for")
     async def smxjacket(self, ctx, *, title: str):
         """
         Returns a jacket for a stepmaniax song from the StepManiaX API.
@@ -48,4 +53,4 @@ class Smxbot(commands.Cog):
             title: the name of a song to search for
         """
         response = get_image(title)
-        await ctx.send(response)
+        await ctx.respond(response)
