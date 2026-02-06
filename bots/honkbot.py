@@ -416,7 +416,8 @@ class Honkbot(commands.Cog):
                 await message.channel.send("HONK!")
         if " izakaya " in message.content.lower():
             await message.channel.send(
-                "Izakaya, an anime-themed restaurant and bar offering pizza, spirits, Korean corn dogs and Japanese pop culture, located at Fairfield Commons Mall in Beavercreek, Ohio?"
+                "Izakaya, an anime-themed restaurant and bar offering pizza, spirits, Korean corn dogs "
+                + "and Japanese pop culture, located at Fairfield Commons Mall in Beavercreek, Ohio?"
             )
         if "dygma" in message.content.lower():
             await message.channel.send("whats dygma")
