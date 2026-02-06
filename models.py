@@ -42,13 +42,10 @@ class CodeDatabaseModel:
         table (str): Name of the database table to interact with
 
     """
+
     def __init__(self, table=None):
 
-        self.AVAILABLE_ATTRIBUTES = [
-            "name",
-            "code",
-            "rank"
-        ]
+        self.AVAILABLE_ATTRIBUTES = ["name", "code", "rank"]
 
         dotenv.load_dotenv()
         self.name = None
@@ -60,7 +57,7 @@ class CodeDatabaseModel:
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT")
+            port=os.getenv("POSTGRES_PORT"),
         )
         self._cursor = self._conn.cursor()
 
@@ -83,16 +80,13 @@ class CodeDatabaseModel:
             raise Exception("Name and code are required attributes")
         self._cursor.execute(
             f"INSERT INTO {table} (user_id, name, code, rank) VALUES (%s, %s, %s, %s);",
-            (user_id, name, code, rank)
+            (user_id, name, code, rank),
         )
         self._conn.commit()
 
     def _get_entry(self, table, user_id):
 
-        self._cursor.execute(
-            f'SELECT * from {table} WHERE user_id=%s;',
-            (user_id,)
-        )
+        self._cursor.execute(f"SELECT * from {table} WHERE user_id=%s;", (user_id,))
         entry = self._cursor.fetchone()
         if entry:
             return entry
@@ -106,7 +100,9 @@ class CodeDatabaseModel:
 
     def _search_entries(self, table, **filters):
 
-        search_string = " AND ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(filters.items())])
+        search_string = " AND ".join(
+            [f"{item[0]} = '{item[1].upper()}'" for item in list(filters.items())]
+        )
         self._cursor.execute(f"SELECT * from {table} WHERE {search_string};")
         response = self._cursor.fetchall()
 
@@ -118,11 +114,10 @@ class CodeDatabaseModel:
         if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
-        set_values = ", ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(kwargs.items())])
-        self._cursor.execute(
-            f'UPDATE {table} SET {set_values} WHERE user_id=%s;',
-            (user_id,)
+        set_values = ", ".join(
+            [f"{item[0]} = '{item[1].upper()}'" for item in list(kwargs.items())]
         )
+        self._cursor.execute(f"UPDATE {table} SET {set_values} WHERE user_id=%s;", (user_id,))
         self._conn.commit()
 
     def _delete_entry(self, table, user_id):
@@ -131,10 +126,7 @@ class CodeDatabaseModel:
         if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
-        self._cursor.execute(
-            f'DELETE FROM {table} WHERE user_id=%s;',
-            (user_id,)
-        )
+        self._cursor.execute(f"DELETE FROM {table} WHERE user_id=%s;", (user_id,))
         self._conn.commit()
 
 
@@ -145,6 +137,7 @@ class DDRCode(CodeDatabaseModel):
     Args:
         user_id (str): Discord User ID to reference
     """
+
     def __init__(self, user_id=None):
         self.user_id = user_id
         super().__init__("ddr_codes")
@@ -246,6 +239,7 @@ class DDRCode(CodeDatabaseModel):
         self.code = None
         self.rank = None
 
+
 class IIDXCode(CodeDatabaseModel):
     """
     Object representing a IIDX player
@@ -253,6 +247,7 @@ class IIDXCode(CodeDatabaseModel):
     Args:
         user_id (str): Discord User ID to reference
     """
+
     def __init__(self, user_id=None):
         self.user_id = user_id
         super().__init__("iidx_codes")

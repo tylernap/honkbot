@@ -59,9 +59,7 @@ class EamuseRivals(commands.Cog):
                 return await ctx.send("DDR ID must follow the following format: `####-####`")
             if rank:
                 if not re.search("^((10|[1-9])(DAN|KYU)|CHUU|KAI)$", rank):
-                    return await ctx.send(
-                        "Rank is not valid! Options are #dan, #kyu, chuu, or kai"
-                    )
+                    return await ctx.send("Rank is not valid! Options are #dan, #kyu, chuu, or kai")
 
             # Entries have been validated. Initiate model object and create entry
             try:
@@ -199,9 +197,7 @@ class EamuseRivals(commands.Cog):
                 return await ctx.send("IIDX ID must follow the following format: `####-####`")
             if rank:
                 if not re.search("^((10|[1-9])(DAN|KYU)|CHUU|KAI)$", rank):
-                    return await ctx.send(
-                        "Rank is not valid! Options are #dan, #kyu, chuu, or kai"
-                    )
+                    return await ctx.send("Rank is not valid! Options are #dan, #kyu, chuu, or kai")
 
             # Entries have been validated. Initiate model object and create entry
             try:

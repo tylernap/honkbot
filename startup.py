@@ -17,7 +17,7 @@ async def add_cogs(bot, cog_list):
 
 
 if "__main__" in __name__:
-    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     logger.info("Starting Honkbot...")
@@ -28,7 +28,7 @@ if "__main__" in __name__:
     google_api_key = os.getenv("GOOGLE_API_KEY")
 
     intents = Intents(messages=True, message_content=True, guilds=True)
-    discord_bot = Bot(command_prefix='!', intents=intents)
+    discord_bot = Bot(command_prefix="!", intents=intents)
 
     honkbot = Honkbot(logger, speedrun_api_key, google_api_key, bot=discord_bot)
     bot_cogs = [honkbot, Remybot(), Smxbot(), EamuseRivals()]
