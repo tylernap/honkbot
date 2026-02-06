@@ -18,7 +18,7 @@ async def add_cogs(bot, cog_list):
 
 
 if "__main__" in __name__:
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     logger.info("Starting Honkbot...")
