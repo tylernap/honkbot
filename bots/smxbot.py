@@ -39,6 +39,11 @@ def get_image(query: str) -> str:
 
 class Smxbot(commands.Cog):
 
+    async def respond(self, ctx, message, view=None):
+        if ctx.interaction:
+            return await ctx.interaction.response.send_message(message, view=view)
+        return await ctx.send(message)
+
     @commands.command()
     async def smxjacket(self, ctx, *, title: str):
         """
@@ -48,4 +53,4 @@ class Smxbot(commands.Cog):
             title: the name of a song to search for
         """
         response = get_image(title)
-        await ctx.send(response)
+        await self.respond(ctx, response)

@@ -100,9 +100,7 @@ class CodeDatabaseModel:
 
     def _search_entries(self, table, **filters):
 
-        search_string = " AND ".join(
-            [f"{item[0]} = '{item[1].upper()}'" for item in list(filters.items())]
-        )
+        search_string = " AND ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(filters.items())])
         self._cursor.execute(f"SELECT * from {table} WHERE {search_string};")
         response = self._cursor.fetchall()
 
@@ -114,9 +112,7 @@ class CodeDatabaseModel:
         if not entry[1]:
             raise Exception(f"Entry for user_id {user_id} not found. Entry must be created first")
 
-        set_values = ", ".join(
-            [f"{item[0]} = '{item[1].upper()}'" for item in list(kwargs.items())]
-        )
+        set_values = ", ".join([f"{item[0]} = '{item[1].upper()}'" for item in list(kwargs.items())])
         self._cursor.execute(f"UPDATE {table} SET {set_values} WHERE user_id=%s;", (user_id,))
         self._conn.commit()
 
@@ -158,9 +154,7 @@ class DDRCode(CodeDatabaseModel):
             None
         """
         if not name or len(name) > 8:
-            raise Exception(
-                "A dancer name with at most 8 characters is required when creating a new entry"
-            )
+            raise Exception("A dancer name with at most 8 characters is required when creating a new entry")
         if not code:
             raise Exception("A DDR code (####-####) is required when creating a new entry")
 
@@ -268,9 +262,7 @@ class IIDXCode(CodeDatabaseModel):
             None
         """
         if not name or len(name) > 6:
-            raise Exception(
-                "A DJ name with at most 6 characters is required when creating a new entry"
-            )
+            raise Exception("A DJ name with at most 6 characters is required when creating a new entry")
         if not code:
             raise Exception("A IIDX ID is required when creating a new entry")
 
