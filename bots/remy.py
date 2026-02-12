@@ -31,7 +31,7 @@ def search_song(query: str) -> Optional[BeautifulSoup]:
     """
     search_data = {"search": query}
     remy_search = requests.get(f"{REMY_URL}/index.php", params=search_data)
-    remy_data = BeautifulSoup(remy_search.text, 'html.parser')
+    remy_data = BeautifulSoup(remy_search.text, "html.parser")
 
     # If we were redirected to a Page and it's a Song, just return it
     if page_is_song(remy_data):
@@ -41,18 +41,18 @@ def search_song(query: str) -> Optional[BeautifulSoup]:
     already_found = remy_data.find("p", {"class": "mw-search-exists"})
     if already_found:
         song_result = requests.get(f"{REMY_URL}{already_found.strong.a['href']}")
-        possible_song = BeautifulSoup(song_result.text, 'html.parser')
+        possible_song = BeautifulSoup(song_result.text, "html.parser")
         if page_is_song(possible_song):
             return possible_song
 
     # Otherwise, just take the first search result when searching in category
-    search_data = {'search': f"{query} incategory:\"Songs\""}
+    search_data = {"search": f'{query} incategory:"Songs"'}
     remy_search = requests.get(f"{REMY_URL}/index.php", params=search_data)
-    remy_data = BeautifulSoup(remy_search.text, 'html.parser')
+    remy_data = BeautifulSoup(remy_search.text, "html.parser")
     first_result = remy_data.find("ul", {"class": "mw-search-results"})
     if first_result:
         song_result = requests.get(f"{REMY_URL}{first_result.li.div.a['href']}")
-        return BeautifulSoup(song_result.text, 'html.parser')
+        return BeautifulSoup(song_result.text, "html.parser")
 
 
 def get_image_from_gallery(href: str, image_type: str) -> Optional[str]:
@@ -65,18 +65,18 @@ def get_image_from_gallery(href: str, image_type: str) -> Optional[str]:
     :return: A relative URL pointing to an image OR None
     """
     gallery_page = requests.get(f"{REMY_URL}{href}")
-    gallery_data = BeautifulSoup(gallery_page.text, 'html.parser')
+    gallery_data = BeautifulSoup(gallery_page.text, "html.parser")
     image_sections = gallery_data.find_all("li", {"class": "gallerybox"})
     for section in image_sections:
         description = section.find("p").text
         if image_type in description:
-            img_urls = section.find("img")['srcset'].split(",")
+            img_urls = section.find("img")["srcset"].split(",")
             largest_image = img_urls[-1]
             return largest_image.split(" ")[1]  # space,url,size
     return None
 
 
-def get_image(query: str, image_type: str = 'jacket') -> str:
+def get_image(query: str, image_type: str = "jacket") -> str:
     """
     Gets an image (or a message about no image) from a RemyWiki song page.
 
@@ -96,21 +96,21 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
         # First try to get the image from the Gallery
         gallery = song_page.find("a", href=re.compile(r"Gallery"))
         if gallery:
-            first_gallery_banner = get_image_from_gallery(gallery["href"], 'banner')
-            first_gallery_jacket = get_image_from_gallery(gallery["href"], 'jacket')
+            first_gallery_banner = get_image_from_gallery(gallery["href"], "banner")
+            first_gallery_jacket = get_image_from_gallery(gallery["href"], "jacket")
             if first_gallery_banner:
-                found_images['banner'] = first_gallery_banner
+                found_images["banner"] = first_gallery_banner
             if first_gallery_jacket:
-                found_images['jacket'] = first_gallery_jacket
+                found_images["jacket"] = first_gallery_jacket
             if image_type in found_images:
                 return f"{REMY_URL}{found_images[image_type]}"
         # If there is no Gallery, try to find it on the page
         images = song_page.find_all("div", {"class": "thumbinner"})
         for image in images:
-            if 'banner' in image.find("div", {"class": "thumbcaption"}).text:
-                found_images['banner'] = f"{REMY_URL}{image.find('img')['src']}"
-            elif 'jacket' in image.find("div", {"class": "thumbcaption"}).text:
-                found_images['jacket'] = f"{REMY_URL}{image.find('img')['src']}"
+            if "banner" in image.find("div", {"class": "thumbcaption"}).text:
+                found_images["banner"] = f"{REMY_URL}{image.find('img')['src']}"
+            elif "jacket" in image.find("div", {"class": "thumbcaption"}).text:
+                found_images["jacket"] = f"{REMY_URL}{image.find('img')['src']}"
             if image_type in found_images:
                 return f"{found_images[image_type]}"
         # If we haven't found the right image in either place
@@ -131,7 +131,12 @@ def get_image(query: str, image_type: str = 'jacket') -> str:
 
 class Remybot(commands.Cog):
 
-    @commands.command()
+    async def respond(self, ctx, message, view=None):
+        if ctx.interaction:
+            return await ctx.interaction.response.send_message(message, view=view)
+        return await ctx.send(message)
+
+    @commands.hybrid_command()
     async def jacket(self, ctx, *, title: str):
         """
         Returns a jacket for a bemani song from remywiki.
@@ -139,10 +144,10 @@ class Remybot(commands.Cog):
         User Arguments:
             title: the name of a song to search for
         """
-        response = get_image(title, 'jacket')
-        await ctx.send(response)
+        response = get_image(title, "jacket")
+        await self.respond(ctx, response)
 
-    @commands.command()
+    @commands.hybrid_command()
     async def banner(self, ctx, *, title: str):
         """
         Returns a banner for a bemani song from remywiki.
@@ -150,5 +155,5 @@ class Remybot(commands.Cog):
         User Arguments:
             title: the name of a song to search for
         """
-        response = get_image(title, 'banner')
-        await ctx.send(response)
+        response = get_image(title, "banner")
+        await self.respond(ctx, response)

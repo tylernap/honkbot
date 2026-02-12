@@ -3,6 +3,7 @@ import logging
 import dotenv
 import os
 from bots.honkbot import Honkbot
+from bots.google import Googlebot
 from bots.remy import Remybot
 from bots.smxbot import Smxbot
 from bots.codes import EamuseRivals
@@ -28,10 +29,11 @@ if "__main__" in __name__:
     google_api_key = os.getenv("GOOGLE_API_KEY")
 
     intents = Intents(messages=True, message_content=True, guilds=True)
-    discord_bot = Bot(command_prefix='!', intents=intents)
+    discord_bot = Bot(command_prefix="!", intents=intents)
 
-    honkbot = Honkbot(logger, speedrun_api_key, google_api_key, bot=discord_bot)
-    bot_cogs = [honkbot, Remybot(), Smxbot(), EamuseRivals()]
+    honkbot = Honkbot(logger, speedrun_api_key, bot=discord_bot)
+    googlebot = Googlebot(logger, google_api_key, bot=discord_bot)
+    bot_cogs = [honkbot, googlebot, Remybot(), Smxbot(), EamuseRivals()]
     asyncio.run(add_cogs(discord_bot, bot_cogs))
 
     discord_bot.run(discord_api_key)
