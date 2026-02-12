@@ -37,13 +37,15 @@ metadata:
   name: honkbot-hpa-edod
   namespace: default
 spec:
+  minReplicas: 1
   maxReplicas: 5
   metrics:
     - resource:
         name: cpu
-        targetAverageUtilization: 80
+        target:
+          type: Utilization
+          averageUtilization: 80
       type: Resource
-  minReplicas: 1
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
