@@ -332,7 +332,7 @@ class Honkbot(commands.Cog):
         """
         Returns a scathing insult about this particular name.
         """
-        await ctx.invoke(self.insult, "ranatalus")
+        await ctx.invoke(self.insult, name="ranatalus")
 
     @commands.command()
     async def record(self, ctx, *, search: str = None):
