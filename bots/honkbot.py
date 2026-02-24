@@ -70,7 +70,11 @@ class RoleDropdown(discord.ui.Select):
                     view=RoleView(action="leave"),
                 )
         except Forbidden:
-            await self.respond_to_user(ctx, "I do not have permissions to assign roles right now!", view=RoleView())
+            await self.respond_to_user(
+                ctx,
+                "I do not have permissions to assign roles right now!",
+                view=RoleView(),
+            )
 
 
 class RoleView(discord.ui.View):
@@ -122,7 +126,9 @@ class Honkbot(commands.Cog):
         self.logger.error(error)
         if isinstance(error, commands.CommandNotFound):
             if ctx.invoked_with.isalnum():
-                await ctx.send(f"{ctx.invoked_with} is not a command. Use !help to see a list of commands")
+                await ctx.send(
+                    f"{ctx.invoked_with} is not a command. Use !help to see a list of commands"
+                )
 
     async def respond_to_user(self, ctx, message, view=None):
         if ctx.interaction:
@@ -172,10 +178,16 @@ class Honkbot(commands.Cog):
 
                 view = RoleView()
                 view.children[0].placeholder = "(Optional) Add another role"
-                return await self.respond_to_user(ctx, f"Adding {ctx.author.display_name} to {role}", view=view)
+                return await self.respond_to_user(
+                    ctx, f"Adding {ctx.author.display_name} to {role}", view=view
+                )
             return await self.respond_to_user(ctx, f"Already in {role}", view=RoleView())
         except Forbidden:
-            await self.respond_to_user(ctx, "I do not have permissions to assign roles right now!", view=RoleView())
+            await self.respond_to_user(
+                ctx,
+                "I do not have permissions to assign roles right now!",
+                view=RoleView(),
+            )
 
     @commands.hybrid_command()
     async def leave(self, ctx, role=""):
@@ -190,7 +202,9 @@ class Honkbot(commands.Cog):
         """
         if not role and ctx.interaction:
             return await ctx.interaction.response.send_message(
-                content="Choose your role to leave", view=RoleView(action="leave"), ephemeral=True
+                content="Choose your role to leave",
+                view=RoleView(action="leave"),
+                ephemeral=True,
             )
 
         role_obj, message = self.get_role_from_input(ctx, role)
@@ -202,7 +216,9 @@ class Honkbot(commands.Cog):
 
                 view = RoleView(action="leave")
                 view.children[0].placeholder = "(Optional) Leave another role"
-                return await self.respond_to_user(ctx, f"Removing {ctx.author.display_name} from {role}", view=view)
+                return await self.respond_to_user(
+                    ctx, f"Removing {ctx.author.display_name} from {role}", view=view
+                )
             return await self.respond_to_user(ctx, f"Not in {role}", view=RoleView(action="leave"))
         except Forbidden:
             await self.respond_to_user(
@@ -221,7 +237,10 @@ class Honkbot(commands.Cog):
         """
         if not role_input and not ctx.interaction:
             return False, "Usage: !join [" + ", ".join(self.custom_roles) + "]"
-        role = next((role for role in self.custom_roles if role_input.lower() == role.lower()), None)
+        role = next(
+            (role for role in self.custom_roles if role_input.lower() == role.lower()),
+            None,
+        )
         if role:
             return discord.utils.get(ctx.guild.roles, name=role), ""
         else:
@@ -236,10 +255,18 @@ class Honkbot(commands.Cog):
         :returns A String in the format "4PM-6PM" based on today's maintenance time
         """
         today = datetime.datetime.utcnow().astimezone(pytz.utc)
-        begin_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][0])
-        end_datetime = datetime.datetime.combine(today.date(), self.eamuse_maintenance[timing_type][1])
-        begin_hour = begin_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip("0")
-        end_hour = end_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip("0")
+        begin_datetime = datetime.datetime.combine(
+            today.date(), self.eamuse_maintenance[timing_type][0]
+        )
+        end_datetime = datetime.datetime.combine(
+            today.date(), self.eamuse_maintenance[timing_type][1]
+        )
+        begin_hour = (
+            begin_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip("0")
+        )
+        end_hour = (
+            end_datetime.astimezone(pytz.timezone("America/New_York")).strftime("%I").lstrip("0")
+        )
         return f"{begin_hour}PM-{end_hour}PM ET"
 
     @staticmethod
@@ -390,7 +417,9 @@ class Honkbot(commands.Cog):
                             r = requests.get("".join([base_url, "users/", user_id]), headers=auth)
                             user_name = r.json()["data"]["names"]["international"]
 
-                            await ctx.send(f"The Any% record for {game_name} is {record} by {user_name}")
+                            await ctx.send(
+                                f"The Any% record for {game_name} is {record} by {user_name}"
+                            )
 
                         else:
                             await ctx.send("There are no Any% records for {}".format(game_name))
@@ -398,7 +427,11 @@ class Honkbot(commands.Cog):
                         names = []
                         for result in results:
                             names.append(result["names"]["international"])
-                        await ctx.send("Multiple results. Do a search for the following: {}".format(", ".join(names)))
+                        await ctx.send(
+                            "Multiple results. Do a search for the following: {}".format(
+                                ", ".join(names)
+                            )
+                        )
                         await ctx.send("If you want the first result, redo the search")
                     else:
                         await ctx.send("Too many results! Be a little more specific")
@@ -414,7 +447,7 @@ class Honkbot(commands.Cog):
                 await message.channel.send("beep")
             else:
                 await message.channel.send("HONK!")
-        if "izakaya " in message.content.lower():
+        if re.search(r"(^|\s)izakaya($|\s.*$)", message.content.lower()):
             await message.channel.send(
                 "Izakaya, an anime-themed restaurant and bar offering pizza, spirits, Korean corn dogs "
                 + "and Japanese pop culture, located at Fairfield Commons Mall in Beavercreek, Ohio?"

@@ -41,7 +41,9 @@ class EamuseRivals(commands.Cog):
             # Some form validation
             # First two args are required. Third arg is optional
             if len(args) < 2:
-                return await ctx.send("Missing required arguments! Use `!help ddrrival` for more information")
+                return await ctx.send(
+                    "Missing required arguments! Use `!help ddrrival` for more information"
+                )
             if len(args) >= 2:
                 name = args[0].upper()
                 code = args[1]
@@ -79,9 +81,13 @@ class EamuseRivals(commands.Cog):
             for arg in args:
                 arg_filter = arg.split("=")
                 if len(arg_filter) != 2:
-                    return await ctx.send("Invalid filters! Use `!help ddrrival` for more information")
+                    return await ctx.send(
+                        "Invalid filters! Use `!help ddrrival` for more information"
+                    )
                 if arg_filter[0] not in ddrcode.AVAILABLE_ATTRIBUTES:
-                    return await ctx.send(f"Invalid filter {arg_filter[0]}! Use `!help ddrrival` for more information")
+                    return await ctx.send(
+                        f"Invalid filter {arg_filter[0]}! Use `!help ddrrival` for more information"
+                    )
                 filters[arg_filter[0]] = arg_filter[1]
             # Search!
             try:
@@ -92,7 +98,9 @@ class EamuseRivals(commands.Cog):
 
             if not response:
                 return await ctx.send("No rivals found with that filter!")
-            response_text = "\n".join([f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response])
+            response_text = "\n".join(
+                [f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response]
+            )
             return await ctx.send(f"```\n{response_text}\n```")
 
         elif action == "update":
@@ -104,16 +112,22 @@ class EamuseRivals(commands.Cog):
             for arg in args:
                 arg_filter = arg.split("=")
                 if len(arg_filter) != 2:
-                    return await ctx.send("Invalid filters! Use `!help ddrrival` for more information")
+                    return await ctx.send(
+                        "Invalid filters! Use `!help ddrrival` for more information"
+                    )
                 if arg_filter[0] not in ddrcode.AVAILABLE_ATTRIBUTES:
-                    return await ctx.send(f"Invalid filter {arg_filter[0]}! Use `!help ddrrival` for more information")
+                    return await ctx.send(
+                        f"Invalid filter {arg_filter[0]}! Use `!help ddrrival` for more information"
+                    )
                 filters[arg_filter[0]] = arg_filter[1]
             # Make the update
             try:
                 ddrcode.update(**filters)
             except Exception as e:
                 if "Entry must be created first" in str(e):
-                    return await ctx.send("Your entry must be created first. See `!help ddrrival` for more information")
+                    return await ctx.send(
+                        "Your entry must be created first. See `!help ddrrival` for more information"
+                    )
                 else:
                     await ctx.send("Cannot update entry! Send help!")
                     raise e
@@ -124,7 +138,9 @@ class EamuseRivals(commands.Cog):
                 ddrcode.delete()
             except Exception as e:
                 if "Entry must be created first" in str(e):
-                    return await ctx.send("Your entry must be created first. See `!help ddrrival` for more information")
+                    return await ctx.send(
+                        "Your entry must be created first. See `!help ddrrival` for more information"
+                    )
                 else:
                     await ctx.send("Cannot delete entry! Send help!")
                     raise e
@@ -163,7 +179,9 @@ class EamuseRivals(commands.Cog):
             # Some form validation
             # First two args are required. Third arg is optional
             if len(args) < 2:
-                return await ctx.send("Missing required arguments! Use `!help iidxrival` for more information")
+                return await ctx.send(
+                    "Missing required arguments! Use `!help iidxrival` for more information"
+                )
             if len(args) >= 2:
                 name = args[0].upper()
                 code = args[1]
@@ -199,9 +217,13 @@ class EamuseRivals(commands.Cog):
             for arg in args:
                 arg_filter = arg.split("=")
                 if len(arg_filter) != 2:
-                    return await ctx.send("Invalid filters! Use `!help iidxrival` for more information")
+                    return await ctx.send(
+                        "Invalid filters! Use `!help iidxrival` for more information"
+                    )
                 if arg_filter[0] not in iidxcode.AVAILABLE_ATTRIBUTES:
-                    return await ctx.send(f"Invalid filter {arg_filter[0]}! Use `!help iidxrival` for more information")
+                    return await ctx.send(
+                        f"Invalid filter {arg_filter[0]}! Use `!help iidxrival` for more information"
+                    )
                 filters[arg_filter[0]] = arg_filter[1]
 
             try:
@@ -211,7 +233,9 @@ class EamuseRivals(commands.Cog):
                 raise e
             if not response:
                 return await ctx.send("No rivals found with that filter!")
-            response_text = "\n".join([f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response])
+            response_text = "\n".join(
+                [f"{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}" for item in response]
+            )
             return await ctx.send(f"```\n{response_text}\n```")
 
         elif action == "update":
@@ -221,9 +245,13 @@ class EamuseRivals(commands.Cog):
             for arg in args:
                 arg_filter = arg.split("=")
                 if len(arg_filter) != 2:
-                    return await ctx.send("Invalid filters! Use `!help iidxrival` for more information")
+                    return await ctx.send(
+                        "Invalid filters! Use `!help iidxrival` for more information"
+                    )
                 if arg_filter[0] not in iidxcode.AVAILABLE_ATTRIBUTES:
-                    return await ctx.send(f"Invalid filter {arg_filter[0]}! Use `!help iidxrival` for more information")
+                    return await ctx.send(
+                        f"Invalid filter {arg_filter[0]}! Use `!help iidxrival` for more information"
+                    )
                 filters[arg_filter[0]] = arg_filter[1]
             try:
                 iidxcode.update(**filters)
