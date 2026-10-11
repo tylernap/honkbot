@@ -12,7 +12,7 @@ HEADERS = {"User-Agent": "OhioDDR-honkbot"}
 logger = logging.getLogger(__name__)
 
 
-def search_song(query: str) -> Optional[str]:
+async def search_song(query: str) -> Optional[str]:
     """
     Tries to find a certain song on RemyWiki
 
@@ -31,7 +31,7 @@ def search_song(query: str) -> Optional[str]:
     }
     logger.debug(f"Searching for song with query: {str(params)}")
     response = requests.get(REMY_API, params=params, headers=HEADERS).json()
-    logger.debug(f"Received response: {str(params)}")
+    logger.debug(f"Received response: {str(response)}")
     pages = response.get("query", {}).get("search", [])
     if pages:
         logger.debug(f"Found title {pages[0]["title"]}")
@@ -39,14 +39,14 @@ def search_song(query: str) -> Optional[str]:
     return None
 
 
-def get_image_from_page(title: str, image_type: str) -> Optional[str]:
+async def get_image_from_page(title: str, image_type: str) -> tuple[Optional[str], Optional[str]]:
     """
     Gets all images from a page through the API
 
     :param title: Title of the song to search for
     :param image_type: Either "banner" or "jacket"
 
-    :return: A URL pointing to an image OR None
+    :return: A tuple with URL pointing to an image OR None, and a backup image if None
     """
     params = {
         "action": "query",
@@ -60,17 +60,17 @@ def get_image_from_page(title: str, image_type: str) -> Optional[str]:
     )
     response = requests.get(REMY_API, params=params, headers=HEADERS).json()
     logger.debug(f"Received response: {str(response)}")
-    return parse_image_response(response, image_type)
+    return await parse_image_response(response, image_type)
 
 
-def get_image_from_gallery(title: str, image_type: str) -> Optional[str]:
+async def get_image_from_gallery(title: str, image_type: str) -> tuple[Optional[str], Optional[str]]:
     """
     Gets an image from the Gallery page template on RemyWiki
 
     :param title: Title of the song to search for
     :param image_type: Either "banner" or "jacket"
 
-    :return: A URL pointing to an image OR None
+    :return: A tuple with URL pointing to an image OR None, and a backup image if None
     """
     params = {
         "action": "query",
@@ -84,22 +84,23 @@ def get_image_from_gallery(title: str, image_type: str) -> Optional[str]:
     )
     response = requests.get(REMY_API, params=params, headers=HEADERS).json()
     logger.debug(f"Received response: {str(response)}")
-    return parse_image_response(response, image_type)
+    return await parse_image_response(response, image_type)
 
 
-def parse_image_response(response: Dict, image_type: str) -> Optional[str]:
+async def parse_image_response(response: Dict, image_type: str) -> tuple[Optional[str], Optional[str]]:
     """
     Parses response from Remywiki for image information
 
     :param response: requests response
 
-    :return: A URL pointing to an image OR None
+    :return: A tuple with URL pointing to an image OR None, and a backup image if None
     """
     # Get images from the song's gallery
     images = []
+    backup = None
     for page in response.get("query", {}).get("pages", []):
         if page.get("missing", False):
-            return None
+            return None, None
 
         for image in page.get("images", []):
             image_title = image.get("title", "")
@@ -127,11 +128,13 @@ def parse_image_response(response: Dict, image_type: str) -> Optional[str]:
                 # We want the latest version
                 # even if the revision we are looking at is not the latest
                 # Praying Remywiki is not mixing up jackets and banners for the same file
-                return page["imageinfo"][0]["url"]
-    return None
+                return page["imageinfo"][0]["url"], None
+            else:
+                backup = page["imageinfo"][0]["url"]
+    return None, backup
 
 
-def get_image(query: str, image_type: str = "jacket") -> str:
+async def get_image(query: str, image_type: str = "jacket") -> str:
     """
     Gets an image (or a message about no image) from a RemyWiki song page.
 
@@ -145,12 +148,16 @@ def get_image(query: str, image_type: str = "jacket") -> str:
     :return: a response fitting for the bot to return, either the requested
         image or a message describing what it found instead
     """
-    song_title = search_song(query)
+    song_title = await search_song(query)
     found_images = {}
+    backup = None
     if song_title:
         # First try to get the image from the Gallery
-        first_gallery_banner = get_image_from_gallery(song_title, "banner")
-        first_gallery_jacket = get_image_from_gallery(song_title, "jacket")
+        first_gallery_banner, backup = await get_image_from_gallery(song_title, "banner")
+        found_images["backup"] = backup
+        first_gallery_jacket, backup = await get_image_from_gallery(song_title, "jacket")
+        if not found_images.get("backup", ""):
+            found_images["backup"] = backup
         if first_gallery_banner:
             logger.debug(f"Found banner for {song_title} from gallery")
             found_images["banner"] = first_gallery_banner
@@ -163,12 +170,16 @@ def get_image(query: str, image_type: str = "jacket") -> str:
         # If there is no Gallery or not in the Gallery, try to find it on the page
         logger.debug(f"No gallery {image_type} images for {song_title} found. Checking page")
         if "banner" not in found_images:
-            first_page_banner = get_image_from_page(song_title, "banner")
+            first_page_banner, backup = await get_image_from_page(song_title, "banner")
+            if not found_images.get("backup", ""):
+                found_images["backup"] = backup
             if first_page_banner:
                 logger.debug(f"Found banner for {song_title} from page")
                 found_images["banner"] = first_page_banner
         if "jacket" not in found_images:
-            first_page_jacket = get_image_from_page(song_title, "jacket")
+            first_page_jacket, backup = await get_image_from_page(song_title, "jacket")
+            if not found_images.get("backup", ""):
+                found_images["backup"] = backup
             if first_page_jacket:
                 logger.debug(f"Found jacket for {song_title} from page")
                 found_images["jacket"] = first_page_jacket
@@ -176,10 +187,11 @@ def get_image(query: str, image_type: str = "jacket") -> str:
             return found_images[image_type]
 
         # Return any other images we found
+        logger.debug(f"Found images for {song_title}: {found_images}")
         if any(found_images):
             logger.debug(f"No {image_type} images found for {song_title}. Providing other")
             image_url = next(img for img in found_images.values() if img)
-            return f"{song_title} does not have a {image_type}, but it does have this:\n{image_url}"
+            return f"{song_title} does not have a designated {image_type}, but it does have:\n{image_url}"
         # Or give a message that there are no related images
         else:
             if song_title.lower() == query.lower():
@@ -194,11 +206,6 @@ def get_image(query: str, image_type: str = "jacket") -> str:
 
 class Remybot(commands.Cog):
 
-    async def respond(self, ctx, message, view=None):
-        if ctx.interaction:
-            return await ctx.interaction.response.send_message(message, view=view)
-        return await ctx.send(message)
-
     @commands.hybrid_command()
     async def jacket(self, ctx, *, title: str):
         """
@@ -207,8 +214,9 @@ class Remybot(commands.Cog):
         User Arguments:
             title: the name of a song to search for
         """
-        response = get_image(title, "jacket")
-        await self.respond(ctx, response)
+        await ctx.defer()
+        response = await get_image(title, "jacket")
+        await ctx.send(response)
 
     @commands.hybrid_command()
     async def banner(self, ctx, *, title: str):
@@ -218,5 +226,6 @@ class Remybot(commands.Cog):
         User Arguments:
             title: the name of a song to search for
         """
-        response = get_image(title, "banner")
-        await self.respond(ctx, response)
+        await ctx.defer()
+        response = await get_image(title, "banner")
+        await ctx.send(response)
