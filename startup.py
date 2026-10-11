@@ -11,6 +11,14 @@ from discord import Intents
 from discord.ext.commands import Bot
 import sys
 
+LOGLEVELS = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warn": logging.WARN,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
+
 
 async def add_cogs(bot, cog_list):
     for cog in cog_list:
@@ -18,12 +26,12 @@ async def add_cogs(bot, cog_list):
 
 
 if "__main__" in __name__:
-    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
+    dotenv.load_dotenv()
+    log_level = os.getenv("DEBUGLEVEL", default="info")
+    logging.basicConfig(stream=sys.stdout, level=LOGLEVELS.get(log_level, logging.INFO))
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
     logger.info("Starting Honkbot...")
 
-    dotenv.load_dotenv()
     discord_api_key = os.getenv("DISCORD_API_KEY")
     speedrun_api_key = os.getenv("SPEEDRUN_API_KEY")
     google_api_key = os.getenv("GOOGLE_API_KEY")
